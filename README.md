@@ -73,6 +73,8 @@ mkdir -p /lib/acpi
 cp acpi_override /lib/acpi
 ```
 
+### Ubuntu
+
 Install the initramfs hook provided here to bake the changes into the initramfs:
 
 ```
@@ -95,7 +97,15 @@ update-initramfs -k all -c
 The above command rebakes _all_ kernels currently installed. You can update only the current kernel via
 `update-initramfs -u -k $(uname -r)`.
 
-After this, `reboot` into the new kernel and observe that it all works :tada:
+### Gentoo
+
+Prepend the CPIO archive to the initramfs:
+```
+mv /boot/initramfs-genkernel-x86_64-4.14.114-gentoo{,.b}
+cat /lib/acpi/acpi_override /boot/initramfs-genkernel-x86_64-4.14.114-gentoo.b > /boot/initramfs-genkernel-x86_64-4.14.114-gentoo
+```
+
+After this, `reboot` with the new initramfs and observe that it all works :tada:
 
 ```
 $ dmesg | grep ACPI | grep supports

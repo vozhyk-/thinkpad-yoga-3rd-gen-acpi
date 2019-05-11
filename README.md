@@ -9,9 +9,18 @@ My environment is Ubuntu 16.04 (xenial), running the latest HWE kernel from Ubun
 ## Steps
 
 First [obtain and compile a recent `iasl`][iasl-download]. This is mandatory. It straight up won't work otherwise.
-To do this, you'll likely need to install a bunch of packages: `build-essential`, `m4`, `bison`, `flex`, and some
+
+### Ubuntu
+
+Install a bunch of packages: `build-essential`, `m4`, `bison`, `flex`, and some
 other packages. Compile with `make`. If it fails, read the error messages and try to find packages that provide
 the utilities it's lacking.
+
+### Gentoo
+
+```
+emerge '>iasl-20160729'
+```
 
 Next, boot into at least Ubuntu 18.04 on a live CD/USB. I'm not sure if this is necessary, but I'll explain in more
 detail below.

@@ -105,6 +105,13 @@ mv /boot/initramfs-genkernel-x86_64-4.14.114-gentoo{,.b}
 cat /lib/acpi/acpi_override /boot/initramfs-genkernel-x86_64-4.14.114-gentoo.b > /boot/initramfs-genkernel-x86_64-4.14.114-gentoo
 ```
 
+Make the kernel use deep sleep by default:
+```
+echo 'GRUB_CMDLINE_LINUX="${GRUB_CMDLINE_LINUX} mem_sleep_default=deep"' >> /etc/default/grub
+grub-mkconfig -o /boot/grub/grub.cfg
+```
+
+
 After this, `reboot` with the new initramfs and observe that it all works :tada:
 
 ```

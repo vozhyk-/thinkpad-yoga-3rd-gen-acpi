@@ -5,20 +5,20 @@
  * 
  * Disassembling to symbolic ASL+ operators
  *
- * Disassembly of dsdt.aml, Sat May 11 19:51:34 2019
+ * Disassembly of dsdt.aml, Sun May 26 18:05:07 2019
  *
  * Original Table Header:
  *     Signature        "DSDT"
- *     Length           0x00026C9B (158875)
+ *     Length           0x00026DB4 (159156)
  *     Revision         0x02
- *     Checksum         0xD4
+ *     Checksum         0x5B
  *     OEM ID           "LENOVO"
  *     OEM Table ID     "SKL     "
  *     OEM Revision     0x00000000 (0)
  *     Compiler ID      "INTL"
  *     Compiler Version 0x20160527 (538314023)
  */
-DefinitionBlock ("", "DSDT", 2, "LENOVO", "SKL     ", 0x00000001)
+DefinitionBlock ("", "DSDT", 2, "LENOVO", "SKL     ", 0x00000000)
 {
     External (_GPE.TBNF, MethodObj)    // 0 Arguments
     External (_PR_.BGIA, UnknownObj)
@@ -261,8 +261,10 @@ DefinitionBlock ("", "DSDT", 2, "LENOVO", "SKL     ", 0x00000001)
 
     Name (SS1, 0x00)
     Name (SS2, 0x00)
-    Name (SS3, One)
+    Name (SS3, Zero)
+    One
     Name (SS4, One)
+    One
     OperationRegion (GNVS, SystemMemory, 0x4FF4E000, 0x0791)
     Field (GNVS, AnyAcc, Lock, Preserve)
     {
@@ -5327,6 +5329,10 @@ DefinitionBlock ("", "DSDT", 2, "LENOVO", "SKL     ", 0x00000001)
         OperationRegion (PWMR, SystemMemory, \PWRM, 0x0800)
         Field (PWMR, AnyAcc, NoLock, Preserve)
         {
+            ACWA,   32, 
+            DCWA,   32, 
+            ACET,   32, 
+            DCET,   32, 
             Offset (0xE0), 
             Offset (0xE2), 
             DWLE,   1, 
@@ -13843,33 +13849,33 @@ DefinitionBlock ("", "DSDT", 2, "LENOVO", "SKL     ", 0x00000001)
         {
             Method (_STA, 0, NotSerialized)  // _STA: Status
             {
-                If ((CIOE == 0x01))
-                {
-                    Return (0x0F)
-                }
-                Else
-                {
-                    Return (0x00)
-                }
+                Return (0x0F)
             }
 
-            Name (_HID, "INT343E")  // _HID: Hardware ID
-            Method (_CRS, 0, NotSerialized)  // _CRS: Current Resource Settings
+            If ((CIOE == 0x01))
             {
-                Name (CBUF, ResourceTemplate ()
+                Name (_HID, "INT343E")  // _HID: Hardware ID
+                Method (_CRS, 0, NotSerialized)  // _CRS: Current Resource Settings
                 {
-                    Interrupt (ResourceConsumer, Level, ActiveLow, Shared, ,, _Y1D)
+                    Name (CBUF, ResourceTemplate ()
                     {
-                        0x00000010,
-                    }
-                    Memory32Fixed (ReadWrite,
-                        0xFE400000,         // Address Base
-                        0x00010000,         // Address Length
-                        )
-                })
-                CreateDWordField (CBUF, \_SB.PCI0.CIO2._CRS._Y1D._INT, CIOV)  // _INT: Interrupts
-                CIOV = CIOI /* \CIOI */
-                Return (CBUF) /* \_SB_.PCI0.CIO2._CRS.CBUF */
+                        Interrupt (ResourceConsumer, Level, ActiveLow, Shared, ,, _Y1D)
+                        {
+                            0x00000010,
+                        }
+                        Memory32Fixed (ReadWrite,
+                            0xFE400000,         // Address Base
+                            0x00010000,         // Address Length
+                            )
+                    })
+                    CreateDWordField (CBUF, \_SB.PCI0.CIO2._CRS._Y1D._INT, CIOV)  // _INT: Interrupts
+                    CIOV = CIOI /* \CIOI */
+                    Return (CBUF) /* \_SB_.PCI0.CIO2._CRS.CBUF */
+                }
+            }
+            Else
+            {
+                Name (_ADR, 0x00140003)  // _ADR: Address
             }
         }
 
@@ -20061,6 +20067,26 @@ DefinitionBlock ("", "DSDT", 2, "LENOVO", "SKL     ", 0x00000001)
         {
             ADBG ("_WAK0")
             \_SB.PCI0.LPCB.EC.HKEY.ANGN = 0x00
+            If (\H8DR)
+            {
+                Local1 = \_SB.PCI0.LPCB.EC.TSL2
+                Local2 = \_SB.PCI0.LPCB.EC.TSL1
+            }
+            Else
+            {
+                Local1 = (\RBEC (0x8A) & 0x7F)
+                Local2 = (\RBEC (0x89) & 0x7F)
+            }
+
+            If ((Local2 & 0x76))
+            {
+                \_SB.PCI0.LPCB.EC.HKEY.DYTC (0x001F4001)
+            }
+            Else
+            {
+                \_SB.PCI0.LPCB.EC.HKEY.DYTC (0x000F4001)
+            }
+
             \_SB.PCI0.LPCB.EC.HKEY.DYTC (0x000F0001)
             ADBG ("_WAK1")
         }
@@ -23750,3902 +23776,3905 @@ DefinitionBlock ("", "DSDT", 2, "LENOVO", "SKL     ", 0x00000001)
         }
     }
 
-    Scope (\_SB.PCI0.GFX0)
+    If ((S0ID == 0x01))
     {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+        Scope (\_SB.PCI0.GFX0)
         {
-            If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
+            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
             {
-                Return (Package (0x01)
-                {
-                    \_SB.PEPD
-                })
-            }
-            Else
-            {
-                Return (Package (0x00){})
-            }
-        }
-    }
-
-    Scope (\_SB.PCI0.ISP0)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
-            {
-                Return (Package (0x01)
-                {
-                    \_SB.PEPD
-                })
-            }
-            Else
-            {
-                Return (Package (0x00){})
-            }
-        }
-    }
-
-    Scope (\_SB.PCI0.SAT0)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && (
-                (PEPC & 0x03) != 0x00)))
-            {
-                Return (Package (0x01)
-                {
-                    \_SB.PEPD
-                })
-            }
-            Else
-            {
-                Return (Package (0x00){})
-            }
-        }
-    }
-
-    Scope (\_SB.PCI0.SAT0.VOL0)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If ((OSYS == 0x07DD))
-            {
-                Return (Package (0x00){})
-            }
-
-            Return (Package (0x01)
-            {
-                \_SB.PEPD
-            })
-        }
-    }
-
-    If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
-    {
-        Scope (\_SB.PCI0.I2C0)
-        {
-            Name (_DEP, Package (0x01)  // _DEP: Dependencies
-            {
-                \_SB.PEPD
-            })
-        }
-
-        Scope (\_SB.PCI0.I2C1)
-        {
-            Name (_DEP, Package (0x01)  // _DEP: Dependencies
-            {
-                \_SB.PEPD
-            })
-        }
-
-        Scope (\_SB.PCI0.I2C2)
-        {
-            Name (_DEP, Package (0x01)  // _DEP: Dependencies
-            {
-                \_SB.PEPD
-            })
-        }
-
-        Scope (\_SB.PCI0.I2C3)
-        {
-            Name (_DEP, Package (0x01)  // _DEP: Dependencies
-            {
-                \_SB.PEPD
-            })
-        }
-
-        Scope (\_SB.PCI0.I2C4)
-        {
-            Name (_DEP, Package (0x01)  // _DEP: Dependencies
-            {
-                \_SB.PEPD
-            })
-        }
-
-        Scope (\_SB.PCI0.I2C5)
-        {
-            Name (_DEP, Package (0x01)  // _DEP: Dependencies
-            {
-                \_SB.PEPD
-            })
-        }
-
-        Scope (\_SB.PCI0.SPI0)
-        {
-            Name (_DEP, Package (0x01)  // _DEP: Dependencies
-            {
-                \_SB.PEPD
-            })
-        }
-
-        Scope (\_SB.PCI0.SPI1)
-        {
-            Name (_DEP, Package (0x01)  // _DEP: Dependencies
-            {
-                \_SB.PEPD
-            })
-        }
-
-        Scope (\_SB.PCI0.UA00)
-        {
-            Name (_DEP, Package (0x01)  // _DEP: Dependencies
-            {
-                \_SB.PEPD
-            })
-        }
-
-        Scope (\_SB.PCI0.UA01)
-        {
-            Name (_DEP, Package (0x01)  // _DEP: Dependencies
-            {
-                \_SB.PEPD
-            })
-        }
-
-        Scope (\_SB.PCI0.UA02)
-        {
-            Name (_DEP, Package (0x01)  // _DEP: Dependencies
-            {
-                \_SB.PEPD
-            })
-        }
-
-        Scope (\_SB.PCI0.HECI)
-        {
-            Name (_DEP, Package (0x01)  // _DEP: Dependencies
-            {
-                \_SB.PEPD
-            })
-        }
-    }
-
-    Scope (\_SB.PCI0.XHC)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
-            {
-                Return (Package (0x01)
-                {
-                    \_SB.PEPD
-                })
-            }
-            Else
-            {
-                Return (Package (0x00){})
-            }
-        }
-    }
-
-    Scope (\_SB.PCI0.HDAS)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If ((S0ID == 0x01))
-            {
-                Return (Package (0x01)
-                {
-                    \_SB.PEPD
-                })
-            }
-            Else
-            {
-                Return (Package (0x00){})
-            }
-        }
-    }
-
-    Scope (\_SB.PCI0.RP01.PXSX)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If ((PAHC () || PNVM ()))
-            {
-                If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
-                    (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
+                If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
                 {
                     Return (Package (0x01)
                     {
                         \_SB.PEPD
                     })
                 }
-            }
-
-            Return (Package (0x00){})
-        }
-
-        OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
-        Field (PCCX, ByteAcc, NoLock, Preserve)
-        {
-            PIXX,   8, 
-            SCCX,   8, 
-            BCCX,   8
-        }
-
-        Method (PAHC, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x06))
+                Else
                 {
-                    If ((PIXX == 0x01))
-                    {
-                        Return (0x01)
-                    }
+                    Return (Package (0x00){})
                 }
             }
-
-            Return (0x00)
         }
 
-        Method (PNVM, 0, Serialized)
+        Scope (\_SB.PCI0.ISP0)
         {
-            If ((BCCX == 0x01))
+            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
             {
-                If ((SCCX == 0x08))
-                {
-                    If ((PIXX == 0x02))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-    }
-
-    Scope (\_SB.PCI0.RP02.PXSX)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If ((PAHC () || PNVM ()))
-            {
-                If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
-                    (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
+                If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
                 {
                     Return (Package (0x01)
                     {
                         \_SB.PEPD
                     })
                 }
-            }
-
-            Return (Package (0x00){})
-        }
-
-        OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
-        Field (PCCX, ByteAcc, NoLock, Preserve)
-        {
-            PIXX,   8, 
-            SCCX,   8, 
-            BCCX,   8
-        }
-
-        Method (PAHC, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x06))
+                Else
                 {
-                    If ((PIXX == 0x01))
-                    {
-                        Return (0x01)
-                    }
+                    Return (Package (0x00){})
                 }
             }
-
-            Return (0x00)
         }
 
-        Method (PNVM, 0, Serialized)
+        Scope (\_SB.PCI0.SAT0)
         {
-            If ((BCCX == 0x01))
+            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
             {
-                If ((SCCX == 0x08))
-                {
-                    If ((PIXX == 0x02))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-    }
-
-    Scope (\_SB.PCI0.RP03.PXSX)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If ((PAHC () || PNVM ()))
-            {
-                If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
-                    (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
+                If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && (
+                    (PEPC & 0x03) != 0x00)))
                 {
                     Return (Package (0x01)
                     {
                         \_SB.PEPD
                     })
                 }
-            }
-
-            Return (Package (0x00){})
-        }
-
-        OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
-        Field (PCCX, ByteAcc, NoLock, Preserve)
-        {
-            PIXX,   8, 
-            SCCX,   8, 
-            BCCX,   8
-        }
-
-        Method (PAHC, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x06))
+                Else
                 {
-                    If ((PIXX == 0x01))
-                    {
-                        Return (0x01)
-                    }
+                    Return (Package (0x00){})
                 }
             }
-
-            Return (0x00)
         }
 
-        Method (PNVM, 0, Serialized)
+        Scope (\_SB.PCI0.SAT0.VOL0)
         {
-            If ((BCCX == 0x01))
+            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
             {
-                If ((SCCX == 0x08))
+                If ((OSYS == 0x07DD))
                 {
-                    If ((PIXX == 0x02))
-                    {
-                        Return (0x01)
-                    }
+                    Return (Package (0x00){})
                 }
-            }
 
-            Return (0x00)
-        }
-    }
-
-    Scope (\_SB.PCI0.RP04.PXSX)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If ((PAHC () || PNVM ()))
-            {
-                If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
-                    (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
-                {
-                    Return (Package (0x01)
-                    {
-                        \_SB.PEPD
-                    })
-                }
-            }
-
-            Return (Package (0x00){})
-        }
-
-        OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
-        Field (PCCX, ByteAcc, NoLock, Preserve)
-        {
-            PIXX,   8, 
-            SCCX,   8, 
-            BCCX,   8
-        }
-
-        Method (PAHC, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x06))
-                {
-                    If ((PIXX == 0x01))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-
-        Method (PNVM, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x08))
-                {
-                    If ((PIXX == 0x02))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-    }
-
-    Scope (\_SB.PCI0.RP05.PXSX)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If ((PAHC () || PNVM ()))
-            {
-                If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
-                    (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
-                {
-                    Return (Package (0x01)
-                    {
-                        \_SB.PEPD
-                    })
-                }
-            }
-
-            Return (Package (0x00){})
-        }
-
-        OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
-        Field (PCCX, ByteAcc, NoLock, Preserve)
-        {
-            PIXX,   8, 
-            SCCX,   8, 
-            BCCX,   8
-        }
-
-        Method (PAHC, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x06))
-                {
-                    If ((PIXX == 0x01))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-
-        Method (PNVM, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x08))
-                {
-                    If ((PIXX == 0x02))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-    }
-
-    Scope (\_SB.PCI0.RP06.PXSX)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If ((PAHC () || PNVM ()))
-            {
-                If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
-                    (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
-                {
-                    Return (Package (0x01)
-                    {
-                        \_SB.PEPD
-                    })
-                }
-            }
-
-            Return (Package (0x00){})
-        }
-
-        OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
-        Field (PCCX, ByteAcc, NoLock, Preserve)
-        {
-            PIXX,   8, 
-            SCCX,   8, 
-            BCCX,   8
-        }
-
-        Method (PAHC, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x06))
-                {
-                    If ((PIXX == 0x01))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-
-        Method (PNVM, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x08))
-                {
-                    If ((PIXX == 0x02))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-    }
-
-    Scope (\_SB.PCI0.RP07.PXSX)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If ((PAHC () || PNVM ()))
-            {
-                If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
-                    (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
-                {
-                    Return (Package (0x01)
-                    {
-                        \_SB.PEPD
-                    })
-                }
-            }
-
-            Return (Package (0x00){})
-        }
-
-        OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
-        Field (PCCX, ByteAcc, NoLock, Preserve)
-        {
-            PIXX,   8, 
-            SCCX,   8, 
-            BCCX,   8
-        }
-
-        Method (PAHC, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x06))
-                {
-                    If ((PIXX == 0x01))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-
-        Method (PNVM, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x08))
-                {
-                    If ((PIXX == 0x02))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-    }
-
-    Scope (\_SB.PCI0.RP08.PXSX)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If ((PAHC () || PNVM ()))
-            {
-                If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
-                    (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
-                {
-                    Return (Package (0x01)
-                    {
-                        \_SB.PEPD
-                    })
-                }
-            }
-
-            Return (Package (0x00){})
-        }
-
-        OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
-        Field (PCCX, ByteAcc, NoLock, Preserve)
-        {
-            PIXX,   8, 
-            SCCX,   8, 
-            BCCX,   8
-        }
-
-        Method (PAHC, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x06))
-                {
-                    If ((PIXX == 0x01))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-
-        Method (PNVM, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x08))
-                {
-                    If ((PIXX == 0x02))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-    }
-
-    Scope (\_SB.PCI0.RP09.PXSX)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If ((PAHC () || PNVM ()))
-            {
-                If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
-                    (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
-                {
-                    Return (Package (0x01)
-                    {
-                        \_SB.PEPD
-                    })
-                }
-            }
-
-            Return (Package (0x00){})
-        }
-
-        OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
-        Field (PCCX, ByteAcc, NoLock, Preserve)
-        {
-            PIXX,   8, 
-            SCCX,   8, 
-            BCCX,   8
-        }
-
-        Method (PAHC, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x06))
-                {
-                    If ((PIXX == 0x01))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-
-        Method (PNVM, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x08))
-                {
-                    If ((PIXX == 0x02))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-    }
-
-    Scope (\_SB.PCI0.RP10.PXSX)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If ((PAHC () || PNVM ()))
-            {
-                If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
-                    (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
-                {
-                    Return (Package (0x01)
-                    {
-                        \_SB.PEPD
-                    })
-                }
-            }
-
-            Return (Package (0x00){})
-        }
-
-        OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
-        Field (PCCX, ByteAcc, NoLock, Preserve)
-        {
-            PIXX,   8, 
-            SCCX,   8, 
-            BCCX,   8
-        }
-
-        Method (PAHC, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x06))
-                {
-                    If ((PIXX == 0x01))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-
-        Method (PNVM, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x08))
-                {
-                    If ((PIXX == 0x02))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-    }
-
-    Scope (\_SB.PCI0.RP11.PXSX)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If ((PAHC () || PNVM ()))
-            {
-                If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
-                    (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
-                {
-                    Return (Package (0x01)
-                    {
-                        \_SB.PEPD
-                    })
-                }
-            }
-
-            Return (Package (0x00){})
-        }
-
-        OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
-        Field (PCCX, ByteAcc, NoLock, Preserve)
-        {
-            PIXX,   8, 
-            SCCX,   8, 
-            BCCX,   8
-        }
-
-        Method (PAHC, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x06))
-                {
-                    If ((PIXX == 0x01))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-
-        Method (PNVM, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x08))
-                {
-                    If ((PIXX == 0x02))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-    }
-
-    Scope (\_SB.PCI0.RP12.PXSX)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If ((PAHC () || PNVM ()))
-            {
-                If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
-                    (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
-                {
-                    Return (Package (0x01)
-                    {
-                        \_SB.PEPD
-                    })
-                }
-            }
-
-            Return (Package (0x00){})
-        }
-
-        OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
-        Field (PCCX, ByteAcc, NoLock, Preserve)
-        {
-            PIXX,   8, 
-            SCCX,   8, 
-            BCCX,   8
-        }
-
-        Method (PAHC, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x06))
-                {
-                    If ((PIXX == 0x01))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-
-        Method (PNVM, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x08))
-                {
-                    If ((PIXX == 0x02))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-    }
-
-    Scope (\_SB.PCI0.RP13.PXSX)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If ((PAHC () || PNVM ()))
-            {
-                If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
-                    (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
-                {
-                    Return (Package (0x01)
-                    {
-                        \_SB.PEPD
-                    })
-                }
-            }
-
-            Return (Package (0x00){})
-        }
-
-        OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
-        Field (PCCX, ByteAcc, NoLock, Preserve)
-        {
-            PIXX,   8, 
-            SCCX,   8, 
-            BCCX,   8
-        }
-
-        Method (PAHC, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x06))
-                {
-                    If ((PIXX == 0x01))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-
-        Method (PNVM, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x08))
-                {
-                    If ((PIXX == 0x02))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-    }
-
-    Scope (\_SB.PCI0.RP14.PXSX)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If ((PAHC () || PNVM ()))
-            {
-                If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
-                    (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
-                {
-                    Return (Package (0x01)
-                    {
-                        \_SB.PEPD
-                    })
-                }
-            }
-
-            Return (Package (0x00){})
-        }
-
-        OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
-        Field (PCCX, ByteAcc, NoLock, Preserve)
-        {
-            PIXX,   8, 
-            SCCX,   8, 
-            BCCX,   8
-        }
-
-        Method (PAHC, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x06))
-                {
-                    If ((PIXX == 0x01))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-
-        Method (PNVM, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x08))
-                {
-                    If ((PIXX == 0x02))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-    }
-
-    Scope (\_SB.PCI0.RP15.PXSX)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If ((PAHC () || PNVM ()))
-            {
-                If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
-                    (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
-                {
-                    Return (Package (0x01)
-                    {
-                        \_SB.PEPD
-                    })
-                }
-            }
-
-            Return (Package (0x00){})
-        }
-
-        OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
-        Field (PCCX, ByteAcc, NoLock, Preserve)
-        {
-            PIXX,   8, 
-            SCCX,   8, 
-            BCCX,   8
-        }
-
-        Method (PAHC, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x06))
-                {
-                    If ((PIXX == 0x01))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-
-        Method (PNVM, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x08))
-                {
-                    If ((PIXX == 0x02))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-    }
-
-    Scope (\_SB.PCI0.RP16.PXSX)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If ((PAHC () || PNVM ()))
-            {
-                If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
-                    (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
-                {
-                    Return (Package (0x01)
-                    {
-                        \_SB.PEPD
-                    })
-                }
-            }
-
-            Return (Package (0x00){})
-        }
-
-        OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
-        Field (PCCX, ByteAcc, NoLock, Preserve)
-        {
-            PIXX,   8, 
-            SCCX,   8, 
-            BCCX,   8
-        }
-
-        Method (PAHC, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x06))
-                {
-                    If ((PIXX == 0x01))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-
-        Method (PNVM, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x08))
-                {
-                    If ((PIXX == 0x02))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-    }
-
-    Scope (\_SB.PCI0.RP17.PXSX)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If ((PAHC () || PNVM ()))
-            {
-                If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
-                    (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
-                {
-                    Return (Package (0x01)
-                    {
-                        \_SB.PEPD
-                    })
-                }
-            }
-
-            Return (Package (0x00){})
-        }
-
-        OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
-        Field (PCCX, ByteAcc, NoLock, Preserve)
-        {
-            PIXX,   8, 
-            SCCX,   8, 
-            BCCX,   8
-        }
-
-        Method (PAHC, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x06))
-                {
-                    If ((PIXX == 0x01))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-
-        Method (PNVM, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x08))
-                {
-                    If ((PIXX == 0x02))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-    }
-
-    Scope (\_SB.PCI0.RP18.PXSX)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If ((PAHC () || PNVM ()))
-            {
-                If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
-                    (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
-                {
-                    Return (Package (0x01)
-                    {
-                        \_SB.PEPD
-                    })
-                }
-            }
-
-            Return (Package (0x00){})
-        }
-
-        OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
-        Field (PCCX, ByteAcc, NoLock, Preserve)
-        {
-            PIXX,   8, 
-            SCCX,   8, 
-            BCCX,   8
-        }
-
-        Method (PAHC, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x06))
-                {
-                    If ((PIXX == 0x01))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-
-        Method (PNVM, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x08))
-                {
-                    If ((PIXX == 0x02))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-    }
-
-    Scope (\_SB.PCI0.RP19.PXSX)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If ((PAHC () || PNVM ()))
-            {
-                If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
-                    (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
-                {
-                    Return (Package (0x01)
-                    {
-                        \_SB.PEPD
-                    })
-                }
-            }
-
-            Return (Package (0x00){})
-        }
-
-        OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
-        Field (PCCX, ByteAcc, NoLock, Preserve)
-        {
-            PIXX,   8, 
-            SCCX,   8, 
-            BCCX,   8
-        }
-
-        Method (PAHC, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x06))
-                {
-                    If ((PIXX == 0x01))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-
-        Method (PNVM, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x08))
-                {
-                    If ((PIXX == 0x02))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-    }
-
-    Scope (\_SB.PCI0.RP20.PXSX)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If ((PAHC () || PNVM ()))
-            {
-                If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
-                    (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
-                {
-                    Return (Package (0x01)
-                    {
-                        \_SB.PEPD
-                    })
-                }
-            }
-
-            Return (Package (0x00){})
-        }
-
-        OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
-        Field (PCCX, ByteAcc, NoLock, Preserve)
-        {
-            PIXX,   8, 
-            SCCX,   8, 
-            BCCX,   8
-        }
-
-        Method (PAHC, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x06))
-                {
-                    If ((PIXX == 0x01))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-
-        Method (PNVM, 0, Serialized)
-        {
-            If ((BCCX == 0x01))
-            {
-                If ((SCCX == 0x08))
-                {
-                    If ((PIXX == 0x02))
-                    {
-                        Return (0x01)
-                    }
-                }
-            }
-
-            Return (0x00)
-        }
-    }
-
-    Scope (\_PR.PR00)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
-            {
                 Return (Package (0x01)
                 {
                     \_SB.PEPD
                 })
             }
-            Else
-            {
-                Return (Package (0x00){})
-            }
         }
-    }
 
-    Scope (\_PR.PR01)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+        If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
         {
-            If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
+            Scope (\_SB.PCI0.I2C0)
             {
-                Return (Package (0x01)
+                Name (_DEP, Package (0x01)  // _DEP: Dependencies
                 {
                     \_SB.PEPD
                 })
             }
-            Else
-            {
-                Return (Package (0x00){})
-            }
-        }
-    }
 
-    Scope (\_PR.PR02)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
+            Scope (\_SB.PCI0.I2C1)
             {
-                Return (Package (0x01)
+                Name (_DEP, Package (0x01)  // _DEP: Dependencies
                 {
                     \_SB.PEPD
                 })
             }
-            Else
-            {
-                Return (Package (0x00){})
-            }
-        }
-    }
 
-    Scope (\_PR.PR03)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            ADBG ("PR03 DEP Call")
-            If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
+            Scope (\_SB.PCI0.I2C2)
             {
-                Return (Package (0x01)
+                Name (_DEP, Package (0x01)  // _DEP: Dependencies
                 {
                     \_SB.PEPD
                 })
             }
-            Else
-            {
-                Return (Package (0x00){})
-            }
-        }
-    }
 
-    Scope (\_PR.PR04)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
+            Scope (\_SB.PCI0.I2C3)
             {
-                Return (Package (0x01)
+                Name (_DEP, Package (0x01)  // _DEP: Dependencies
                 {
                     \_SB.PEPD
                 })
             }
-            Else
-            {
-                Return (Package (0x00){})
-            }
-        }
-    }
 
-    Scope (\_PR.PR05)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
+            Scope (\_SB.PCI0.I2C4)
             {
-                Return (Package (0x01)
+                Name (_DEP, Package (0x01)  // _DEP: Dependencies
                 {
                     \_SB.PEPD
                 })
             }
-            Else
-            {
-                Return (Package (0x00){})
-            }
-        }
-    }
 
-    Scope (\_PR.PR06)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
+            Scope (\_SB.PCI0.I2C5)
             {
-                Return (Package (0x01)
+                Name (_DEP, Package (0x01)  // _DEP: Dependencies
                 {
                     \_SB.PEPD
                 })
             }
-            Else
-            {
-                Return (Package (0x00){})
-            }
-        }
-    }
 
-    Scope (\_PR.PR07)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
+            Scope (\_SB.PCI0.SPI0)
             {
-                Return (Package (0x01)
+                Name (_DEP, Package (0x01)  // _DEP: Dependencies
                 {
                     \_SB.PEPD
                 })
             }
-            Else
-            {
-                Return (Package (0x00){})
-            }
-        }
-    }
 
-    Scope (\_PR.PR08)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
+            Scope (\_SB.PCI0.SPI1)
             {
-                Return (Package (0x01)
+                Name (_DEP, Package (0x01)  // _DEP: Dependencies
                 {
                     \_SB.PEPD
                 })
             }
-            Else
-            {
-                Return (Package (0x00){})
-            }
-        }
-    }
 
-    Scope (\_PR.PR09)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
+            Scope (\_SB.PCI0.UA00)
             {
-                Return (Package (0x01)
+                Name (_DEP, Package (0x01)  // _DEP: Dependencies
                 {
                     \_SB.PEPD
                 })
             }
-            Else
-            {
-                Return (Package (0x00){})
-            }
-        }
-    }
 
-    Scope (\_PR.PR10)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
+            Scope (\_SB.PCI0.UA01)
             {
-                Return (Package (0x01)
+                Name (_DEP, Package (0x01)  // _DEP: Dependencies
                 {
                     \_SB.PEPD
                 })
             }
-            Else
-            {
-                Return (Package (0x00){})
-            }
-        }
-    }
 
-    Scope (\_PR.PR11)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
+            Scope (\_SB.PCI0.UA02)
             {
-                Return (Package (0x01)
+                Name (_DEP, Package (0x01)  // _DEP: Dependencies
                 {
                     \_SB.PEPD
                 })
             }
-            Else
-            {
-                Return (Package (0x00){})
-            }
-        }
-    }
 
-    Scope (\_PR.PR12)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
+            Scope (\_SB.PCI0.HECI)
             {
-                Return (Package (0x01)
+                Name (_DEP, Package (0x01)  // _DEP: Dependencies
                 {
                     \_SB.PEPD
                 })
             }
-            Else
+        }
+
+        Scope (\_SB.PCI0.XHC)
+        {
+            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
             {
-                Return (Package (0x00){})
+                If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
+                {
+                    Return (Package (0x01)
+                    {
+                        \_SB.PEPD
+                    })
+                }
+                Else
+                {
+                    Return (Package (0x00){})
+                }
             }
         }
-    }
 
-    Scope (\_PR.PR13)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+        Scope (\_SB.PCI0.HDAS)
         {
-            If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
+            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
             {
-                Return (Package (0x01)
+                If ((S0ID == 0x01))
                 {
-                    \_SB.PEPD
-                })
-            }
-            Else
-            {
-                Return (Package (0x00){})
+                    Return (Package (0x01)
+                    {
+                        \_SB.PEPD
+                    })
+                }
+                Else
+                {
+                    Return (Package (0x00){})
+                }
             }
         }
-    }
 
-    Scope (\_PR.PR14)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+        Scope (\_SB.PCI0.RP01.PXSX)
         {
-            If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
+            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
             {
-                Return (Package (0x01)
+                If ((PAHC () || PNVM ()))
                 {
-                    \_SB.PEPD
-                })
-            }
-            Else
-            {
-                Return (Package (0x00){})
-            }
-        }
-    }
-
-    Scope (\_PR.PR15)
-    {
-        Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
-        {
-            If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
-            {
-                Return (Package (0x01)
-                {
-                    \_SB.PEPD
-                })
-            }
-            Else
-            {
-                Return (Package (0x00){})
-            }
-        }
-    }
-
-    Scope (\_SB)
-    {
-        Device (PEPD)
-        {
-            Name (_HID, "INT33A1" /* Intel Power Engine */)  // _HID: Hardware ID
-            Name (_CID, EisaId ("PNP0D80") /* Windows-compatible System Power Management Controller */)  // _CID: Compatible ID
-            Name (_UID, 0x01)  // _UID: Unique ID
-            Name (DEVY, Package (0x44)
-            {
-                Package (0x03)
-                {
-                    "\\_PR.PR00", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x00
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_PR.PR01", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x00
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_PR.PR02", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x00
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_PR.PR03", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x00
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_PR.PR04", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x00
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_PR.PR05", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x00
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_PR.PR06", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x00
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_PR.PR07", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x00
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.GFX0", 
-                    0x01, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x03
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.SAT0", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x03)
-                        {
-                            0xFF, 
-                            0x00, 
-                            0x81
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.UA00", 
-                    0x01, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x03
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.UA01", 
-                    0x01, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x03
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.I2C0", 
-                    0x01, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x03
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.I2C1", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x03
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.XHC", 
-                    0x01, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x03
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.HDAS", 
-                    0x01, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x03)
-                        {
-                            0xFF, 
-                            0x00, 
-                            0x81
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.PEMC", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x03
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.PSDC", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x03
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.I2C2", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x03
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.I2C3", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x03
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.I2C4", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x03
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.I2C5", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x03
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.UA02", 
-                    0x01, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x03
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.SPI0", 
-                    0x01, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x03
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.SPI1", 
-                    0x01, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x03
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.RP01.PXSX", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x03)
-                        {
-                            0xFF, 
-                            0x00, 
-                            0x81
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.RP02.PXSX", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x03)
-                        {
-                            0xFF, 
-                            0x00, 
-                            0x81
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.RP03.PXSX", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x03)
-                        {
-                            0xFF, 
-                            0x00, 
-                            0x81
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.RP04.PXSX", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x03)
-                        {
-                            0xFF, 
-                            0x00, 
-                            0x81
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.RP05.PXSX", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x03)
-                        {
-                            0xFF, 
-                            0x00, 
-                            0x81
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.RP06.PXSX", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x03)
-                        {
-                            0xFF, 
-                            0x00, 
-                            0x81
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.RP07.PXSX", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x03)
-                        {
-                            0xFF, 
-                            0x00, 
-                            0x81
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.RP08.PXSX", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x03)
-                        {
-                            0xFF, 
-                            0x00, 
-                            0x81
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.RP09.PXSX", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x03)
-                        {
-                            0xFF, 
-                            0x00, 
-                            0x81
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.RP10.PXSX", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x03)
-                        {
-                            0xFF, 
-                            0x00, 
-                            0x81
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.RP11.PXSX", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x03)
-                        {
-                            0xFF, 
-                            0x00, 
-                            0x81
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.RP12.PXSX", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x03)
-                        {
-                            0xFF, 
-                            0x00, 
-                            0x81
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.RP13.PXSX", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x03)
-                        {
-                            0xFF, 
-                            0x00, 
-                            0x81
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.RP14.PXSX", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x03)
-                        {
-                            0xFF, 
-                            0x00, 
-                            0x81
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.RP15.PXSX", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x03)
-                        {
-                            0xFF, 
-                            0x00, 
-                            0x81
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.RP16.PXSX", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x03)
-                        {
-                            0xFF, 
-                            0x00, 
-                            0x81
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.RP17.PXSX", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x03)
-                        {
-                            0xFF, 
-                            0x00, 
-                            0x81
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.RP18.PXSX", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x03)
-                        {
-                            0xFF, 
-                            0x00, 
-                            0x81
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.RP19.PXSX", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x03)
-                        {
-                            0xFF, 
-                            0x00, 
-                            0x81
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.RP20.PXSX", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x03)
-                        {
-                            0xFF, 
-                            0x00, 
-                            0x81
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.ISP0", 
-                    0x01, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x03
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.SAT0.PRT0", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x03
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.SAT0.PRT1", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x03
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.SAT0.PRT2", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x03
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.SAT0.PRT3", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x03
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.SAT0.PRT4", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x03
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.SAT0.PRT5", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x03
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.SAT0.NVM1", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x03
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.SAT0.NVM2", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x03
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.SAT0.NVM3", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x03
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.SAT0.VOL0", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x03)
-                        {
-                            0xFF, 
-                            0x00, 
-                            0x81
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_PR.PR08", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x00
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_PR.PR09", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x00
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_PR.PR10", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x00
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_PR.PR11", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x00
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_PR.PR12", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x00
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_PR.PR13", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x00
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_PR.PR14", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x00
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_PR.PR15", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x00
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.HECI", 
-                    0x01, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x03)
-                        {
-                            0xFF, 
-                            0x00, 
-                            0x81
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.RP09.PXSX.TBDU.XHC", 
-                    0x00, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x03
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.GLAN", 
-                    0x01, 
-                    Package (0x02)
-                    {
-                        0x00, 
-                        Package (0x02)
-                        {
-                            0xFF, 
-                            0x03
-                        }
-                    }
-                }, 
-
-                Package (0x03)
-                {
-                    "\\_SB.PCI0.RP09", 
-                    0x00, 
-                    Package (0x02)
+                    If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
+                        (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
                     {
-                        0x00, 
-                        Package (0x02)
+                        Return (Package (0x01)
                         {
-                            0xFF, 
-                            0x03
-                        }
+                            \_SB.PEPD
+                        })
                     }
                 }
-            })
-            Name (BCCD, Package (0x0B)
+
+                Return (Package (0x00){})
+            }
+
+            OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
+            Field (PCCX, ByteAcc, NoLock, Preserve)
             {
-                Package (0x02)
-                {
-                    "\\_SB.PCI0.SAT0", 
-                    Package (0x01)
-                    {
-                        Package (0x03)
-                        {
-                            Package (0x05)
-                            {
-                                0x01, 
-                                0x08, 
-                                0x00, 
-                                0x01, 
-                                0xB2
-                            }, 
+                PIXX,   8, 
+                SCCX,   8, 
+                BCCX,   8
+            }
 
-                            Package (0x03)
-                            {
-                                0x00, 
-                                0xCD, 
-                                0x01
-                            }, 
-
-                            0x3E80
-                        }
-                    }
-                }, 
-
-                Package (0x02)
-                {
-                    "\\_SB.PCI0.SAT0.PRT0", 
-                    Package (0x01)
-                    {
-                        Package (0x03)
-                        {
-                            Package (0x05)
-                            {
-                                0x01, 
-                                0x08, 
-                                0x00, 
-                                0x01, 
-                                0xB2
-                            }, 
-
-                            Package (0x03)
-                            {
-                                0x00, 
-                                0xCD, 
-                                0x01
-                            }, 
-
-                            0x3E80
-                        }
-                    }
-                }, 
-
-                Package (0x02)
-                {
-                    "\\_SB.PCI0.SAT0.PRT1", 
-                    Package (0x01)
-                    {
-                        Package (0x03)
-                        {
-                            Package (0x05)
-                            {
-                                0x01, 
-                                0x08, 
-                                0x00, 
-                                0x01, 
-                                0xB2
-                            }, 
-
-                            Package (0x03)
-                            {
-                                0x00, 
-                                0xCD, 
-                                0x01
-                            }, 
-
-                            0x3E80
-                        }
-                    }
-                }, 
-
-                Package (0x02)
-                {
-                    "\\_SB.PCI0.SAT0.PRT2", 
-                    Package (0x01)
-                    {
-                        Package (0x03)
-                        {
-                            Package (0x05)
-                            {
-                                0x01, 
-                                0x08, 
-                                0x00, 
-                                0x01, 
-                                0xB2
-                            }, 
-
-                            Package (0x03)
-                            {
-                                0x00, 
-                                0xCD, 
-                                0x01
-                            }, 
-
-                            0x3E80
-                        }
-                    }
-                }, 
-
-                Package (0x02)
-                {
-                    "\\_SB.PCI0.SAT0.PRT3", 
-                    Package (0x01)
-                    {
-                        Package (0x03)
-                        {
-                            Package (0x05)
-                            {
-                                0x01, 
-                                0x08, 
-                                0x00, 
-                                0x01, 
-                                0xB2
-                            }, 
-
-                            Package (0x03)
-                            {
-                                0x00, 
-                                0xCD, 
-                                0x01
-                            }, 
-
-                            0x3E80
-                        }
-                    }
-                }, 
-
-                Package (0x02)
-                {
-                    "\\_SB.PCI0.SAT0.VOL0", 
-                    Package (0x01)
-                    {
-                        Package (0x03)
-                        {
-                            Package (0x05)
-                            {
-                                0x01, 
-                                0x08, 
-                                0x00, 
-                                0x01, 
-                                0xB2
-                            }, 
-
-                            Package (0x03)
-                            {
-                                0x00, 
-                                0xCD, 
-                                0x01
-                            }, 
-
-                            0x3E80
-                        }
-                    }
-                }, 
-
-                Package (0x02)
-                {
-                    "\\_SB.PCI0.RP01.PXSX", 
-                    Package (0x01)
-                    {
-                        Package (0x03)
-                        {
-                            Package (0x05)
-                            {
-                                0x01, 
-                                0x08, 
-                                0x00, 
-                                0x01, 
-                                0xB2
-                            }, 
-
-                            Package (0x03)
-                            {
-                                0x00, 
-                                0xCD, 
-                                0x01
-                            }, 
-
-                            0x000186A0
-                        }
-                    }
-                }, 
-
-                Package (0x02)
-                {
-                    "\\_SB.PCI0.RP02.PXSX", 
-                    Package (0x01)
-                    {
-                        Package (0x03)
-                        {
-                            Package (0x05)
-                            {
-                                0x01, 
-                                0x08, 
-                                0x00, 
-                                0x01, 
-                                0xB2
-                            }, 
-
-                            Package (0x03)
-                            {
-                                0x00, 
-                                0xCD, 
-                                0x01
-                            }, 
-
-                            0x000186A0
-                        }
-                    }
-                }, 
-
-                Package (0x02)
-                {
-                    "\\_SB.PCI0.RP03.PXSX", 
-                    Package (0x01)
-                    {
-                        Package (0x03)
-                        {
-                            Package (0x05)
-                            {
-                                0x01, 
-                                0x08, 
-                                0x00, 
-                                0x01, 
-                                0xB2
-                            }, 
-
-                            Package (0x03)
-                            {
-                                0x00, 
-                                0xCD, 
-                                0x01
-                            }, 
-
-                            0x000186A0
-                        }
-                    }
-                }, 
-
-                Package (0x02)
-                {
-                    "\\_SB.PCI0.RP05.PXSX", 
-                    Package (0x01)
-                    {
-                        Package (0x03)
-                        {
-                            Package (0x05)
-                            {
-                                0x01, 
-                                0x08, 
-                                0x00, 
-                                0x01, 
-                                0xB2
-                            }, 
-
-                            Package (0x03)
-                            {
-                                0x00, 
-                                0xCD, 
-                                0x01
-                            }, 
-
-                            0x000186A0
-                        }
-                    }
-                }, 
-
-                Package (0x02)
-                {
-                    "\\_SB.PCI0.RP09.PXSX", 
-                    Package (0x01)
-                    {
-                        Package (0x03)
-                        {
-                            Package (0x05)
-                            {
-                                0x01, 
-                                0x08, 
-                                0x00, 
-                                0x01, 
-                                0xB2
-                            }, 
-
-                            Package (0x03)
-                            {
-                                0x00, 
-                                0xCD, 
-                                0x01
-                            }, 
-
-                            0x000186A0
-                        }
-                    }
-                }
-            })
-            Method (_STA, 0, NotSerialized)  // _STA: Status
+            Method (PAHC, 0, Serialized)
             {
-                If (((OSYS >= 0x07DF) || ((OSYS >= 0x07DC) && (
-                    S0ID == 0x01))))
+                If ((BCCX == 0x01))
                 {
-                    Return (0x0F)
+                    If ((SCCX == 0x06))
+                    {
+                        If ((PIXX == 0x01))
+                        {
+                            Return (0x01)
+                        }
+                    }
                 }
 
                 Return (0x00)
             }
 
-            Method (_DSM, 4, Serialized)  // _DSM: Device-Specific Method
+            Method (PNVM, 0, Serialized)
             {
-                If ((Arg0 == ToUUID ("c4eb40a0-6cd2-11e2-bcfd-0800200c9a66")))
+                If ((BCCX == 0x01))
                 {
-                    If ((Arg2 == Zero))
+                    If ((SCCX == 0x08))
                     {
-                        Return (Buffer (One)
+                        If ((PIXX == 0x02))
                         {
-                             0x7F                                             // .
-                        })
-                    }
-
-                    If ((Arg2 == One))
-                    {
-                        If ((S0ID == 0x00))
-                        {
-                            Return (Package (0x00){})
-                        }
-
-                        If (((PEPC & 0x00100000) != 0x00))
-                        {
-                            If ((\_SB.PCI0.RP01.PXSX.PAHC () || \_SB.PCI0.RP01.PXSX.PNVM ()))
-                            {
-                                DerefOf (DEVY [0x19]) [0x01] = 0x01
-                            }
-
-                            If ((\_SB.PCI0.RP02.PXSX.PAHC () || \_SB.PCI0.RP02.PXSX.PNVM ()))
-                            {
-                                DerefOf (DEVY [0x1A]) [0x01] = 0x01
-                            }
-
-                            If ((\_SB.PCI0.RP03.PXSX.PAHC () || \_SB.PCI0.RP03.PXSX.PNVM ()))
-                            {
-                                DerefOf (DEVY [0x1B]) [0x01] = 0x01
-                            }
-
-                            If ((\_SB.PCI0.RP04.PXSX.PAHC () || \_SB.PCI0.RP04.PXSX.PNVM ()))
-                            {
-                                DerefOf (DEVY [0x1C]) [0x01] = 0x01
-                            }
-
-                            If ((\_SB.PCI0.RP05.PXSX.PAHC () || \_SB.PCI0.RP05.PXSX.PNVM ()))
-                            {
-                                DerefOf (DEVY [0x1D]) [0x01] = 0x01
-                            }
-
-                            If ((\_SB.PCI0.RP06.PXSX.PAHC () || \_SB.PCI0.RP06.PXSX.PNVM ()))
-                            {
-                                DerefOf (DEVY [0x1E]) [0x01] = 0x01
-                            }
-
-                            If ((\_SB.PCI0.RP07.PXSX.PAHC () || \_SB.PCI0.RP07.PXSX.PNVM ()))
-                            {
-                                DerefOf (DEVY [0x1F]) [0x01] = 0x01
-                            }
-
-                            If ((\_SB.PCI0.RP08.PXSX.PAHC () || \_SB.PCI0.RP08.PXSX.PNVM ()))
-                            {
-                                DerefOf (DEVY [0x20]) [0x01] = 0x01
-                            }
-
-                            If ((\_SB.PCI0.RP09.PXSX.PAHC () || \_SB.PCI0.RP09.PXSX.PNVM ()))
-                            {
-                                DerefOf (DEVY [0x21]) [0x01] = 0x01
-                            }
-
-                            If ((\_SB.PCI0.RP10.PXSX.PAHC () || \_SB.PCI0.RP10.PXSX.PNVM ()))
-                            {
-                                DerefOf (DEVY [0x22]) [0x01] = 0x01
-                            }
-
-                            If ((\_SB.PCI0.RP11.PXSX.PAHC () || \_SB.PCI0.RP11.PXSX.PNVM ()))
-                            {
-                                DerefOf (DEVY [0x23]) [0x01] = 0x01
-                            }
-
-                            If ((\_SB.PCI0.RP12.PXSX.PAHC () || \_SB.PCI0.RP12.PXSX.PNVM ()))
-                            {
-                                DerefOf (DEVY [0x24]) [0x01] = 0x01
-                            }
-
-                            If ((\_SB.PCI0.RP13.PXSX.PAHC () || \_SB.PCI0.RP13.PXSX.PNVM ()))
-                            {
-                                DerefOf (DEVY [0x25]) [0x01] = 0x01
-                            }
-
-                            If ((\_SB.PCI0.RP14.PXSX.PAHC () || \_SB.PCI0.RP14.PXSX.PNVM ()))
-                            {
-                                DerefOf (DEVY [0x26]) [0x01] = 0x01
-                            }
-
-                            If ((\_SB.PCI0.RP15.PXSX.PAHC () || \_SB.PCI0.RP15.PXSX.PNVM ()))
-                            {
-                                DerefOf (DEVY [0x27]) [0x01] = 0x01
-                            }
-
-                            If ((\_SB.PCI0.RP16.PXSX.PAHC () || \_SB.PCI0.RP16.PXSX.PNVM ()))
-                            {
-                                DerefOf (DEVY [0x28]) [0x01] = 0x01
-                            }
-
-                            If ((\_SB.PCI0.RP17.PXSX.PAHC () || \_SB.PCI0.RP17.PXSX.PNVM ()))
-                            {
-                                DerefOf (DEVY [0x29]) [0x01] = 0x01
-                            }
-
-                            If ((\_SB.PCI0.RP18.PXSX.PAHC () || \_SB.PCI0.RP18.PXSX.PNVM ()))
-                            {
-                                DerefOf (DEVY [0x2A]) [0x01] = 0x01
-                            }
-
-                            If ((\_SB.PCI0.RP19.PXSX.PAHC () || \_SB.PCI0.RP19.PXSX.PNVM ()))
-                            {
-                                DerefOf (DEVY [0x2B]) [0x01] = 0x01
-                            }
-
-                            If ((\_SB.PCI0.RP20.PXSX.PAHC () || \_SB.PCI0.RP20.PXSX.PNVM ()))
-                            {
-                                DerefOf (DEVY [0x2C]) [0x01] = 0x01
-                            }
-                        }
-
-                        If (((PEPC & 0x00200000) != 0x00))
-                        {
-                            DerefOf (DEVY [0x37]) [0x01] = 0x01
-                        }
-
-                        If (((PEPC & 0x00400000) != 0x00))
-                        {
-                            DerefOf (DEVY [0x2E]) [0x01] = 0x01
-                        }
-
-                        If (((PEPC & 0x00800000) != 0x00))
-                        {
-                            DerefOf (DEVY [0x2F]) [0x01] = 0x01
-                        }
-
-                        If (((PEPC & 0x01000000) != 0x00))
-                        {
-                            DerefOf (DEVY [0x30]) [0x01] = 0x01
-                        }
-
-                        If (((PEPC & 0x02000000) != 0x00))
-                        {
-                            DerefOf (DEVY [0x31]) [0x01] = 0x01
-                        }
-
-                        If (((PEPC & 0x04000000) != 0x00))
-                        {
-                            DerefOf (DEVY [0x32]) [0x01] = 0x01
-                        }
-
-                        If (((PEPC & 0x08000000) != 0x00))
-                        {
-                            DerefOf (DEVY [0x33]) [0x01] = 0x01
-                        }
-
-                        If (((PEPC & 0x10000000) != 0x00))
-                        {
-                            DerefOf (DEVY [0x34]) [0x01] = 0x01
-                        }
-
-                        If (((PEPC & 0x20000000) != 0x00))
-                        {
-                            DerefOf (DEVY [0x35]) [0x01] = 0x01
-                        }
-
-                        If (((PEPC & 0x40000000) != 0x00))
-                        {
-                            DerefOf (DEVY [0x36]) [0x01] = 0x01
-                        }
-
-                        If (((PEPC & 0x04) == 0x00))
-                        {
-                            DerefOf (DEVY [0x0A]) [0x01] = 0x00
-                        }
-
-                        If (((PEPC & 0x08) == 0x00))
-                        {
-                            DerefOf (DEVY [0x0B]) [0x01] = 0x00
-                        }
-
-                        If (((PEPC & 0x10) == 0x00)){}
-                        If (((PEPC & 0x20) == 0x00))
-                        {
-                            DerefOf (DEVY [0x0C]) [0x01] = 0x00
-                        }
-
-                        If (((PEPC & 0x40) == 0x00))
-                        {
-                            DerefOf (DEVY [0x0D]) [0x01] = 0x00
-                        }
-
-                        If (((PEPC & 0x80) == 0x00))
-                        {
-                            DerefOf (DEVY [0x0E]) [0x01] = 0x00
-                        }
-
-                        If (((PEPC & 0x0100) == 0x00))
-                        {
-                            DerefOf (DEVY [0x0F]) [0x01] = 0x00
-                        }
-
-                        If (((PEPC & 0x0200) == 0x00))
-                        {
-                            DerefOf (DEVY [0x08]) [0x01] = 0x00
-                        }
-
-                        If ((TCNT >= 0x01))
-                        {
-                            DerefOf (DEVY [0x00]) [0x01] = 0x01
-                        }
-
-                        If ((TCNT >= 0x02))
-                        {
-                            DerefOf (DEVY [0x01]) [0x01] = 0x01
-                        }
-
-                        If ((TCNT >= 0x03))
-                        {
-                            DerefOf (DEVY [0x02]) [0x01] = 0x01
-                        }
-
-                        If ((TCNT >= 0x04))
-                        {
-                            DerefOf (DEVY [0x03]) [0x01] = 0x01
-                        }
-
-                        If ((TCNT >= 0x05))
-                        {
-                            DerefOf (DEVY [0x04]) [0x01] = 0x01
-                        }
-
-                        If ((TCNT >= 0x06))
-                        {
-                            DerefOf (DEVY [0x05]) [0x01] = 0x01
-                        }
-
-                        If ((TCNT >= 0x07))
-                        {
-                            DerefOf (DEVY [0x06]) [0x01] = 0x01
-                        }
-
-                        If ((TCNT >= 0x08))
-                        {
-                            DerefOf (DEVY [0x07]) [0x01] = 0x01
-                        }
-
-                        If ((TCNT >= 0x09))
-                        {
-                            DerefOf (DEVY [0x38]) [0x01] = 0x01
-                        }
-
-                        If ((TCNT >= 0x0A))
-                        {
-                            DerefOf (DEVY [0x39]) [0x01] = 0x01
-                        }
-
-                        If ((TCNT >= 0x0B))
-                        {
-                            DerefOf (DEVY [0x3A]) [0x01] = 0x01
-                        }
-
-                        If ((TCNT >= 0x0C))
-                        {
-                            DerefOf (DEVY [0x3B]) [0x01] = 0x01
-                        }
-
-                        If ((TCNT >= 0x0D))
-                        {
-                            DerefOf (DEVY [0x3C]) [0x01] = 0x01
-                        }
-
-                        If ((TCNT >= 0x0E))
-                        {
-                            DerefOf (DEVY [0x3D]) [0x01] = 0x01
-                        }
-
-                        If ((TCNT >= 0x0F))
-                        {
-                            DerefOf (DEVY [0x3E]) [0x01] = 0x01
-                        }
-
-                        If ((TCNT >= 0x10))
-                        {
-                            DerefOf (DEVY [0x3F]) [0x01] = 0x01
-                        }
-
-                        If (((PEPC & 0x0400) == 0x00))
-                        {
-                            DerefOf (DEVY [0x00]) [0x01] = 0x00
-                            DerefOf (DEVY [0x01]) [0x01] = 0x00
-                            DerefOf (DEVY [0x02]) [0x01] = 0x00
-                            DerefOf (DEVY [0x03]) [0x01] = 0x00
-                            DerefOf (DEVY [0x04]) [0x01] = 0x00
-                            DerefOf (DEVY [0x05]) [0x01] = 0x00
-                            DerefOf (DEVY [0x06]) [0x01] = 0x00
-                            DerefOf (DEVY [0x07]) [0x01] = 0x00
-                            DerefOf (DEVY [0x38]) [0x01] = 0x00
-                            DerefOf (DEVY [0x39]) [0x01] = 0x00
-                            DerefOf (DEVY [0x3A]) [0x01] = 0x00
-                            DerefOf (DEVY [0x3B]) [0x01] = 0x00
-                            DerefOf (DEVY [0x3C]) [0x01] = 0x00
-                            DerefOf (DEVY [0x3D]) [0x01] = 0x00
-                            DerefOf (DEVY [0x3E]) [0x01] = 0x00
-                            DerefOf (DEVY [0x3F]) [0x01] = 0x00
-                        }
-
-                        If (((PEPC & 0x0800) == 0x00))
-                        {
-                            DerefOf (DEVY [0x10]) [0x01] = 0x00
-                        }
-
-                        If (((PEPC & 0x1000) == 0x00))
-                        {
-                            DerefOf (DEVY [0x11]) [0x01] = 0x00
-                        }
-
-                        If (((PEPC & 0x2000) == 0x00))
-                        {
-                            DerefOf (DEVY [0x12]) [0x01] = 0x00
-                        }
-
-                        If (((PEPC & 0x4000) == 0x00))
-                        {
-                            DerefOf (DEVY [0x13]) [0x01] = 0x00
-                        }
-
-                        If (((PEPC & 0x8000) == 0x00))
-                        {
-                            DerefOf (DEVY [0x14]) [0x01] = 0x00
-                        }
-
-                        If (((PEPC & 0x00010000) == 0x00))
-                        {
-                            DerefOf (DEVY [0x15]) [0x01] = 0x00
-                        }
-
-                        If (((PEPC & 0x00020000) == 0x00))
-                        {
-                            DerefOf (DEVY [0x16]) [0x01] = 0x00
-                        }
-
-                        If (((PEPC & 0x00040000) == 0x00))
-                        {
-                            DerefOf (DEVY [0x17]) [0x01] = 0x00
-                        }
-
-                        If (((PEPC & 0x00080000) == 0x00))
-                        {
-                            DerefOf (DEVY [0x18]) [0x01] = 0x00
-                        }
-
-                        If (((PEPC & 0x02) == 0x00))
-                        {
-                            DerefOf (DEVY [0x2D]) [0x01] = 0x00
-                        }
-
-                        If ((OSYS >= 0x07DF))
-                        {
-                            If (CondRefOf (\_SB.PCI0.RP01.PXSX.WIST))
-                            {
-                                If (\_SB.PCI0.RP01.PXSX.WIST ())
-                                {
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x19]) [0x02]
-                                        ) [0x01]) [0x01] = 0x03
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x19]) [0x02]
-                                        ) [0x01]) [0x02] = 0x00
-                                    DerefOf (DEVY [0x19]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP02.PXSX.WIST))
-                            {
-                                If (\_SB.PCI0.RP02.PXSX.WIST ())
-                                {
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x1A]) [0x02]
-                                        ) [0x01]) [0x01] = 0x03
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x1A]) [0x02]
-                                        ) [0x01]) [0x02] = 0x00
-                                    DerefOf (DEVY [0x1A]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP03.PXSX.WIST))
-                            {
-                                If (\_SB.PCI0.RP03.PXSX.WIST ())
-                                {
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x1B]) [0x02]
-                                        ) [0x01]) [0x01] = 0x03
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x1B]) [0x02]
-                                        ) [0x01]) [0x02] = 0x00
-                                    DerefOf (DEVY [0x1B]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP04.PXSX.WIST))
-                            {
-                                If (\_SB.PCI0.RP04.PXSX.WIST ())
-                                {
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x1C]) [0x02]
-                                        ) [0x01]) [0x01] = 0x03
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x1C]) [0x02]
-                                        ) [0x01]) [0x02] = 0x00
-                                    DerefOf (DEVY [0x1C]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP05.PXSX.WIST))
-                            {
-                                If (\_SB.PCI0.RP05.PXSX.WIST ())
-                                {
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x1D]) [0x02]
-                                        ) [0x01]) [0x01] = 0x03
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x1D]) [0x02]
-                                        ) [0x01]) [0x02] = 0x00
-                                    DerefOf (DEVY [0x1D]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP06.PXSX.WIST))
-                            {
-                                If (\_SB.PCI0.RP06.PXSX.WIST ())
-                                {
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x1E]) [0x02]
-                                        ) [0x01]) [0x01] = 0x03
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x1E]) [0x02]
-                                        ) [0x01]) [0x02] = 0x00
-                                    DerefOf (DEVY [0x1E]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP07.PXSX.WIST))
-                            {
-                                If (\_SB.PCI0.RP07.PXSX.WIST ())
-                                {
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x1F]) [0x02]
-                                        ) [0x01]) [0x01] = 0x03
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x1F]) [0x02]
-                                        ) [0x01]) [0x02] = 0x00
-                                    DerefOf (DEVY [0x1F]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP08.PXSX.WIST))
-                            {
-                                If (\_SB.PCI0.RP08.PXSX.WIST ())
-                                {
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x20]) [0x02]
-                                        ) [0x01]) [0x01] = 0x03
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x20]) [0x02]
-                                        ) [0x01]) [0x02] = 0x00
-                                    DerefOf (DEVY [0x20]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP09.PXSX.WIST))
-                            {
-                                If (\_SB.PCI0.RP09.PXSX.WIST ())
-                                {
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x21]) [0x02]
-                                        ) [0x01]) [0x01] = 0x03
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x21]) [0x02]
-                                        ) [0x01]) [0x02] = 0x00
-                                    DerefOf (DEVY [0x21]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP10.PXSX.WIST))
-                            {
-                                If (\_SB.PCI0.RP10.PXSX.WIST ())
-                                {
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x22]) [0x02]
-                                        ) [0x01]) [0x01] = 0x03
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x22]) [0x02]
-                                        ) [0x01]) [0x02] = 0x00
-                                    DerefOf (DEVY [0x22]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP11.PXSX.WIST))
-                            {
-                                If (\_SB.PCI0.RP11.PXSX.WIST ())
-                                {
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x23]) [0x02]
-                                        ) [0x01]) [0x01] = 0x03
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x23]) [0x02]
-                                        ) [0x01]) [0x02] = 0x00
-                                    DerefOf (DEVY [0x23]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP12.PXSX.WIST))
-                            {
-                                If (\_SB.PCI0.RP12.PXSX.WIST ())
-                                {
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x24]) [0x02]
-                                        ) [0x01]) [0x01] = 0x03
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x24]) [0x02]
-                                        ) [0x01]) [0x02] = 0x00
-                                    DerefOf (DEVY [0x24]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP13.PXSX.WIST))
-                            {
-                                If (\_SB.PCI0.RP13.PXSX.WIST ())
-                                {
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x25]) [0x02]
-                                        ) [0x01]) [0x01] = 0x03
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x25]) [0x02]
-                                        ) [0x01]) [0x02] = 0x00
-                                    DerefOf (DEVY [0x25]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP14.PXSX.WIST))
-                            {
-                                If (\_SB.PCI0.RP14.PXSX.WIST ())
-                                {
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x26]) [0x02]
-                                        ) [0x01]) [0x01] = 0x03
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x26]) [0x02]
-                                        ) [0x01]) [0x02] = 0x00
-                                    DerefOf (DEVY [0x26]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP15.PXSX.WIST))
-                            {
-                                If (\_SB.PCI0.RP15.PXSX.WIST ())
-                                {
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x27]) [0x02]
-                                        ) [0x01]) [0x01] = 0x03
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x27]) [0x02]
-                                        ) [0x01]) [0x02] = 0x00
-                                    DerefOf (DEVY [0x27]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP16.PXSX.WIST))
-                            {
-                                If (\_SB.PCI0.RP16.PXSX.WIST ())
-                                {
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x28]) [0x02]
-                                        ) [0x01]) [0x01] = 0x03
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x28]) [0x02]
-                                        ) [0x01]) [0x02] = 0x00
-                                    DerefOf (DEVY [0x28]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP17.PXSX.WIST))
-                            {
-                                If (\_SB.PCI0.RP17.PXSX.WIST ())
-                                {
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x29]) [0x02]
-                                        ) [0x01]) [0x01] = 0x03
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x29]) [0x02]
-                                        ) [0x01]) [0x02] = 0x00
-                                    DerefOf (DEVY [0x29]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP18.PXSX.WIST))
-                            {
-                                If (\_SB.PCI0.RP18.PXSX.WIST ())
-                                {
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x2A]) [0x02]
-                                        ) [0x01]) [0x01] = 0x03
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x2A]) [0x02]
-                                        ) [0x01]) [0x02] = 0x00
-                                    DerefOf (DEVY [0x2A]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP19.PXSX.WIST))
-                            {
-                                If (\_SB.PCI0.RP19.PXSX.WIST ())
-                                {
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x2B]) [0x02]
-                                        ) [0x01]) [0x01] = 0x03
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x2B]) [0x02]
-                                        ) [0x01]) [0x02] = 0x00
-                                    DerefOf (DEVY [0x2B]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP20.PXSX.WIST))
-                            {
-                                If (\_SB.PCI0.RP20.PXSX.WIST ())
-                                {
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x2C]) [0x02]
-                                        ) [0x01]) [0x01] = 0x03
-                                    DerefOf (DerefOf (DerefOf (DEVY [0x2C]) [0x02]
-                                        ) [0x01]) [0x02] = 0x00
-                                    DerefOf (DEVY [0x2C]) [0x01] = 0x01
-                                }
-                            }
-                        }
-
-                        If (((OSYS >= 0x07DF) && (PWIG == 0x01)))
-                        {
-                            If (CondRefOf (\_SB.PCI0.RP01.PXSX.WGST))
-                            {
-                                If (\_SB.PCI0.RP01.PXSX.WGST ())
-                                {
-                                    DerefOf (DEVY [0x19]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP02.PXSX.WGST))
-                            {
-                                If (\_SB.PCI0.RP02.PXSX.WGST ())
-                                {
-                                    DerefOf (DEVY [0x1A]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP03.PXSX.WGST))
-                            {
-                                If (\_SB.PCI0.RP03.PXSX.WGST ())
-                                {
-                                    DerefOf (DEVY [0x1B]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP04.PXSX.WGST))
-                            {
-                                If (\_SB.PCI0.RP04.PXSX.WGST ())
-                                {
-                                    DerefOf (DEVY [0x1C]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP05.PXSX.WGST))
-                            {
-                                If (\_SB.PCI0.RP05.PXSX.WGST ())
-                                {
-                                    DerefOf (DEVY [0x1D]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP06.PXSX.WGST))
-                            {
-                                If (\_SB.PCI0.RP06.PXSX.WGST ())
-                                {
-                                    DerefOf (DEVY [0x1E]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP07.PXSX.WGST))
-                            {
-                                If (\_SB.PCI0.RP07.PXSX.WGST ())
-                                {
-                                    DerefOf (DEVY [0x1F]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP08.PXSX.WGST))
-                            {
-                                If (\_SB.PCI0.RP08.PXSX.WGST ())
-                                {
-                                    DerefOf (DEVY [0x20]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP09.PXSX.WGST))
-                            {
-                                If (\_SB.PCI0.RP09.PXSX.WGST ())
-                                {
-                                    DerefOf (DEVY [0x21]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP10.PXSX.WGST))
-                            {
-                                If (\_SB.PCI0.RP10.PXSX.WGST ())
-                                {
-                                    DerefOf (DEVY [0x22]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP11.PXSX.WGST))
-                            {
-                                If (\_SB.PCI0.RP11.PXSX.WGST ())
-                                {
-                                    DerefOf (DEVY [0x23]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP12.PXSX.WGST))
-                            {
-                                If (\_SB.PCI0.RP12.PXSX.WGST ())
-                                {
-                                    DerefOf (DEVY [0x24]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP13.PXSX.WGST))
-                            {
-                                If (\_SB.PCI0.RP13.PXSX.WGST ())
-                                {
-                                    DerefOf (DEVY [0x25]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP14.PXSX.WGST))
-                            {
-                                If (\_SB.PCI0.RP14.PXSX.WGST ())
-                                {
-                                    DerefOf (DEVY [0x26]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP15.PXSX.WGST))
-                            {
-                                If (\_SB.PCI0.RP15.PXSX.WGST ())
-                                {
-                                    DerefOf (DEVY [0x27]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP16.PXSX.WGST))
-                            {
-                                If (\_SB.PCI0.RP16.PXSX.WGST ())
-                                {
-                                    DerefOf (DEVY [0x28]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP17.PXSX.WGST))
-                            {
-                                If (\_SB.PCI0.RP17.PXSX.WGST ())
-                                {
-                                    DerefOf (DEVY [0x29]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP18.PXSX.WGST))
-                            {
-                                If (\_SB.PCI0.RP18.PXSX.WGST ())
-                                {
-                                    DerefOf (DEVY [0x2A]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP19.PXSX.WGST))
-                            {
-                                If (\_SB.PCI0.RP19.PXSX.WGST ())
-                                {
-                                    DerefOf (DEVY [0x2B]) [0x01] = 0x01
-                                }
-                            }
-
-                            If (CondRefOf (\_SB.PCI0.RP20.PXSX.WGST))
-                            {
-                                If (\_SB.PCI0.RP20.PXSX.WGST ())
-                                {
-                                    DerefOf (DEVY [0x2C]) [0x01] = 0x01
-                                }
-                            }
-                        }
-
-                        If (((\RTBT == 0x01) && (\TBTS == 0x01)))
-                        {
-                            DerefOf (DEVY [0x43]) [0x01] = 0x01
-                        }
-
-                        If ((\_SB.PCI0.GLAN.GLST () == 0x00))
-                        {
-                            DerefOf (DEVY [0x42]) [0x01] = 0x00
-                        }
-
-                        Return (DEVY) /* \_SB_.PEPD.DEVY */
-                    }
-
-                    If ((Arg2 == 0x02))
-                    {
-                        Return (BCCD) /* \_SB_.PEPD.BCCD */
-                    }
-
-                    If ((Arg2 == 0x03))
-                    {
-                        If ((S0ID == 0x01))
-                        {
-                            \_SB.PCI0.LPCB.EC.ECNT (0x01)
-                        }
-                    }
-
-                    If ((Arg2 == 0x04))
-                    {
-                        If ((S0ID == 0x01))
-                        {
-                            If (((\RTBT == 0x01) && CondRefOf (\_GPE.TBNF)))
-                            {
-                                \_GPE.TBNF ()
-                            }
-
-                            \_SB.PCI0.LPCB.EC.ECNT (0x00)
-                        }
-                    }
-
-                    If ((Arg2 == 0x05))
-                    {
-                        If ((S0ID == 0x01))
-                        {
-                            \GUAM (0x01)
-                        }
-
-                        \_SB.PCI0.LPCB.EC.ECNT (0x03)
-                    }
-
-                    If ((Arg2 == 0x06))
-                    {
-                        \_SB.PCI0.LPCB.EC.ECNT (0x02)
-                        If ((S0ID == 0x01))
-                        {
-                            \GUAM (0x00)
+                            Return (0x01)
                         }
                     }
                 }
 
-                Return (Buffer (0x01)
+                Return (0x00)
+            }
+        }
+
+        Scope (\_SB.PCI0.RP02.PXSX)
+        {
+            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            {
+                If ((PAHC () || PNVM ()))
                 {
-                     0x00                                             // .
+                    If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
+                        (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
+                    {
+                        Return (Package (0x01)
+                        {
+                            \_SB.PEPD
+                        })
+                    }
+                }
+
+                Return (Package (0x00){})
+            }
+
+            OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
+            Field (PCCX, ByteAcc, NoLock, Preserve)
+            {
+                PIXX,   8, 
+                SCCX,   8, 
+                BCCX,   8
+            }
+
+            Method (PAHC, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x06))
+                    {
+                        If ((PIXX == 0x01))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+
+            Method (PNVM, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x08))
+                    {
+                        If ((PIXX == 0x02))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+        }
+
+        Scope (\_SB.PCI0.RP03.PXSX)
+        {
+            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            {
+                If ((PAHC () || PNVM ()))
+                {
+                    If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
+                        (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
+                    {
+                        Return (Package (0x01)
+                        {
+                            \_SB.PEPD
+                        })
+                    }
+                }
+
+                Return (Package (0x00){})
+            }
+
+            OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
+            Field (PCCX, ByteAcc, NoLock, Preserve)
+            {
+                PIXX,   8, 
+                SCCX,   8, 
+                BCCX,   8
+            }
+
+            Method (PAHC, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x06))
+                    {
+                        If ((PIXX == 0x01))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+
+            Method (PNVM, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x08))
+                    {
+                        If ((PIXX == 0x02))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+        }
+
+        Scope (\_SB.PCI0.RP04.PXSX)
+        {
+            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            {
+                If ((PAHC () || PNVM ()))
+                {
+                    If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
+                        (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
+                    {
+                        Return (Package (0x01)
+                        {
+                            \_SB.PEPD
+                        })
+                    }
+                }
+
+                Return (Package (0x00){})
+            }
+
+            OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
+            Field (PCCX, ByteAcc, NoLock, Preserve)
+            {
+                PIXX,   8, 
+                SCCX,   8, 
+                BCCX,   8
+            }
+
+            Method (PAHC, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x06))
+                    {
+                        If ((PIXX == 0x01))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+
+            Method (PNVM, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x08))
+                    {
+                        If ((PIXX == 0x02))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+        }
+
+        Scope (\_SB.PCI0.RP05.PXSX)
+        {
+            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            {
+                If ((PAHC () || PNVM ()))
+                {
+                    If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
+                        (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
+                    {
+                        Return (Package (0x01)
+                        {
+                            \_SB.PEPD
+                        })
+                    }
+                }
+
+                Return (Package (0x00){})
+            }
+
+            OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
+            Field (PCCX, ByteAcc, NoLock, Preserve)
+            {
+                PIXX,   8, 
+                SCCX,   8, 
+                BCCX,   8
+            }
+
+            Method (PAHC, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x06))
+                    {
+                        If ((PIXX == 0x01))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+
+            Method (PNVM, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x08))
+                    {
+                        If ((PIXX == 0x02))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+        }
+
+        Scope (\_SB.PCI0.RP06.PXSX)
+        {
+            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            {
+                If ((PAHC () || PNVM ()))
+                {
+                    If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
+                        (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
+                    {
+                        Return (Package (0x01)
+                        {
+                            \_SB.PEPD
+                        })
+                    }
+                }
+
+                Return (Package (0x00){})
+            }
+
+            OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
+            Field (PCCX, ByteAcc, NoLock, Preserve)
+            {
+                PIXX,   8, 
+                SCCX,   8, 
+                BCCX,   8
+            }
+
+            Method (PAHC, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x06))
+                    {
+                        If ((PIXX == 0x01))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+
+            Method (PNVM, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x08))
+                    {
+                        If ((PIXX == 0x02))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+        }
+
+        Scope (\_SB.PCI0.RP07.PXSX)
+        {
+            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            {
+                If ((PAHC () || PNVM ()))
+                {
+                    If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
+                        (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
+                    {
+                        Return (Package (0x01)
+                        {
+                            \_SB.PEPD
+                        })
+                    }
+                }
+
+                Return (Package (0x00){})
+            }
+
+            OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
+            Field (PCCX, ByteAcc, NoLock, Preserve)
+            {
+                PIXX,   8, 
+                SCCX,   8, 
+                BCCX,   8
+            }
+
+            Method (PAHC, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x06))
+                    {
+                        If ((PIXX == 0x01))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+
+            Method (PNVM, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x08))
+                    {
+                        If ((PIXX == 0x02))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+        }
+
+        Scope (\_SB.PCI0.RP08.PXSX)
+        {
+            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            {
+                If ((PAHC () || PNVM ()))
+                {
+                    If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
+                        (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
+                    {
+                        Return (Package (0x01)
+                        {
+                            \_SB.PEPD
+                        })
+                    }
+                }
+
+                Return (Package (0x00){})
+            }
+
+            OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
+            Field (PCCX, ByteAcc, NoLock, Preserve)
+            {
+                PIXX,   8, 
+                SCCX,   8, 
+                BCCX,   8
+            }
+
+            Method (PAHC, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x06))
+                    {
+                        If ((PIXX == 0x01))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+
+            Method (PNVM, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x08))
+                    {
+                        If ((PIXX == 0x02))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+        }
+
+        Scope (\_SB.PCI0.RP09.PXSX)
+        {
+            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            {
+                If ((PAHC () || PNVM ()))
+                {
+                    If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
+                        (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
+                    {
+                        Return (Package (0x01)
+                        {
+                            \_SB.PEPD
+                        })
+                    }
+                }
+
+                Return (Package (0x00){})
+            }
+
+            OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
+            Field (PCCX, ByteAcc, NoLock, Preserve)
+            {
+                PIXX,   8, 
+                SCCX,   8, 
+                BCCX,   8
+            }
+
+            Method (PAHC, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x06))
+                    {
+                        If ((PIXX == 0x01))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+
+            Method (PNVM, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x08))
+                    {
+                        If ((PIXX == 0x02))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+        }
+
+        Scope (\_SB.PCI0.RP10.PXSX)
+        {
+            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            {
+                If ((PAHC () || PNVM ()))
+                {
+                    If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
+                        (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
+                    {
+                        Return (Package (0x01)
+                        {
+                            \_SB.PEPD
+                        })
+                    }
+                }
+
+                Return (Package (0x00){})
+            }
+
+            OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
+            Field (PCCX, ByteAcc, NoLock, Preserve)
+            {
+                PIXX,   8, 
+                SCCX,   8, 
+                BCCX,   8
+            }
+
+            Method (PAHC, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x06))
+                    {
+                        If ((PIXX == 0x01))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+
+            Method (PNVM, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x08))
+                    {
+                        If ((PIXX == 0x02))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+        }
+
+        Scope (\_SB.PCI0.RP11.PXSX)
+        {
+            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            {
+                If ((PAHC () || PNVM ()))
+                {
+                    If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
+                        (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
+                    {
+                        Return (Package (0x01)
+                        {
+                            \_SB.PEPD
+                        })
+                    }
+                }
+
+                Return (Package (0x00){})
+            }
+
+            OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
+            Field (PCCX, ByteAcc, NoLock, Preserve)
+            {
+                PIXX,   8, 
+                SCCX,   8, 
+                BCCX,   8
+            }
+
+            Method (PAHC, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x06))
+                    {
+                        If ((PIXX == 0x01))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+
+            Method (PNVM, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x08))
+                    {
+                        If ((PIXX == 0x02))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+        }
+
+        Scope (\_SB.PCI0.RP12.PXSX)
+        {
+            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            {
+                If ((PAHC () || PNVM ()))
+                {
+                    If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
+                        (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
+                    {
+                        Return (Package (0x01)
+                        {
+                            \_SB.PEPD
+                        })
+                    }
+                }
+
+                Return (Package (0x00){})
+            }
+
+            OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
+            Field (PCCX, ByteAcc, NoLock, Preserve)
+            {
+                PIXX,   8, 
+                SCCX,   8, 
+                BCCX,   8
+            }
+
+            Method (PAHC, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x06))
+                    {
+                        If ((PIXX == 0x01))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+
+            Method (PNVM, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x08))
+                    {
+                        If ((PIXX == 0x02))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+        }
+
+        Scope (\_SB.PCI0.RP13.PXSX)
+        {
+            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            {
+                If ((PAHC () || PNVM ()))
+                {
+                    If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
+                        (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
+                    {
+                        Return (Package (0x01)
+                        {
+                            \_SB.PEPD
+                        })
+                    }
+                }
+
+                Return (Package (0x00){})
+            }
+
+            OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
+            Field (PCCX, ByteAcc, NoLock, Preserve)
+            {
+                PIXX,   8, 
+                SCCX,   8, 
+                BCCX,   8
+            }
+
+            Method (PAHC, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x06))
+                    {
+                        If ((PIXX == 0x01))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+
+            Method (PNVM, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x08))
+                    {
+                        If ((PIXX == 0x02))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+        }
+
+        Scope (\_SB.PCI0.RP14.PXSX)
+        {
+            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            {
+                If ((PAHC () || PNVM ()))
+                {
+                    If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
+                        (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
+                    {
+                        Return (Package (0x01)
+                        {
+                            \_SB.PEPD
+                        })
+                    }
+                }
+
+                Return (Package (0x00){})
+            }
+
+            OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
+            Field (PCCX, ByteAcc, NoLock, Preserve)
+            {
+                PIXX,   8, 
+                SCCX,   8, 
+                BCCX,   8
+            }
+
+            Method (PAHC, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x06))
+                    {
+                        If ((PIXX == 0x01))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+
+            Method (PNVM, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x08))
+                    {
+                        If ((PIXX == 0x02))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+        }
+
+        Scope (\_SB.PCI0.RP15.PXSX)
+        {
+            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            {
+                If ((PAHC () || PNVM ()))
+                {
+                    If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
+                        (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
+                    {
+                        Return (Package (0x01)
+                        {
+                            \_SB.PEPD
+                        })
+                    }
+                }
+
+                Return (Package (0x00){})
+            }
+
+            OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
+            Field (PCCX, ByteAcc, NoLock, Preserve)
+            {
+                PIXX,   8, 
+                SCCX,   8, 
+                BCCX,   8
+            }
+
+            Method (PAHC, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x06))
+                    {
+                        If ((PIXX == 0x01))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+
+            Method (PNVM, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x08))
+                    {
+                        If ((PIXX == 0x02))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+        }
+
+        Scope (\_SB.PCI0.RP16.PXSX)
+        {
+            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            {
+                If ((PAHC () || PNVM ()))
+                {
+                    If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
+                        (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
+                    {
+                        Return (Package (0x01)
+                        {
+                            \_SB.PEPD
+                        })
+                    }
+                }
+
+                Return (Package (0x00){})
+            }
+
+            OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
+            Field (PCCX, ByteAcc, NoLock, Preserve)
+            {
+                PIXX,   8, 
+                SCCX,   8, 
+                BCCX,   8
+            }
+
+            Method (PAHC, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x06))
+                    {
+                        If ((PIXX == 0x01))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+
+            Method (PNVM, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x08))
+                    {
+                        If ((PIXX == 0x02))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+        }
+
+        Scope (\_SB.PCI0.RP17.PXSX)
+        {
+            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            {
+                If ((PAHC () || PNVM ()))
+                {
+                    If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
+                        (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
+                    {
+                        Return (Package (0x01)
+                        {
+                            \_SB.PEPD
+                        })
+                    }
+                }
+
+                Return (Package (0x00){})
+            }
+
+            OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
+            Field (PCCX, ByteAcc, NoLock, Preserve)
+            {
+                PIXX,   8, 
+                SCCX,   8, 
+                BCCX,   8
+            }
+
+            Method (PAHC, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x06))
+                    {
+                        If ((PIXX == 0x01))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+
+            Method (PNVM, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x08))
+                    {
+                        If ((PIXX == 0x02))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+        }
+
+        Scope (\_SB.PCI0.RP18.PXSX)
+        {
+            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            {
+                If ((PAHC () || PNVM ()))
+                {
+                    If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
+                        (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
+                    {
+                        Return (Package (0x01)
+                        {
+                            \_SB.PEPD
+                        })
+                    }
+                }
+
+                Return (Package (0x00){})
+            }
+
+            OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
+            Field (PCCX, ByteAcc, NoLock, Preserve)
+            {
+                PIXX,   8, 
+                SCCX,   8, 
+                BCCX,   8
+            }
+
+            Method (PAHC, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x06))
+                    {
+                        If ((PIXX == 0x01))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+
+            Method (PNVM, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x08))
+                    {
+                        If ((PIXX == 0x02))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+        }
+
+        Scope (\_SB.PCI0.RP19.PXSX)
+        {
+            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            {
+                If ((PAHC () || PNVM ()))
+                {
+                    If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
+                        (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
+                    {
+                        Return (Package (0x01)
+                        {
+                            \_SB.PEPD
+                        })
+                    }
+                }
+
+                Return (Package (0x00){})
+            }
+
+            OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
+            Field (PCCX, ByteAcc, NoLock, Preserve)
+            {
+                PIXX,   8, 
+                SCCX,   8, 
+                BCCX,   8
+            }
+
+            Method (PAHC, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x06))
+                    {
+                        If ((PIXX == 0x01))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+
+            Method (PNVM, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x08))
+                    {
+                        If ((PIXX == 0x02))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+        }
+
+        Scope (\_SB.PCI0.RP20.PXSX)
+        {
+            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            {
+                If ((PAHC () || PNVM ()))
+                {
+                    If ((((S0ID == 0x01) || (OSYS >= 0x07DF)) && ((
+                        (PEPC & 0x0400) == 0x0400) || ((PEPC & 0x0800) == 0x0800))))
+                    {
+                        Return (Package (0x01)
+                        {
+                            \_SB.PEPD
+                        })
+                    }
+                }
+
+                Return (Package (0x00){})
+            }
+
+            OperationRegion (PCCX, PCI_Config, 0x09, 0x04)
+            Field (PCCX, ByteAcc, NoLock, Preserve)
+            {
+                PIXX,   8, 
+                SCCX,   8, 
+                BCCX,   8
+            }
+
+            Method (PAHC, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x06))
+                    {
+                        If ((PIXX == 0x01))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+
+            Method (PNVM, 0, Serialized)
+            {
+                If ((BCCX == 0x01))
+                {
+                    If ((SCCX == 0x08))
+                    {
+                        If ((PIXX == 0x02))
+                        {
+                            Return (0x01)
+                        }
+                    }
+                }
+
+                Return (0x00)
+            }
+        }
+
+        Scope (\_PR.PR00)
+        {
+            Method (XDEP, 0, NotSerialized)
+            {
+                If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
+                {
+                    Return (Package (0x01)
+                    {
+                        \_SB.PEPD
+                    })
+                }
+                Else
+                {
+                    Return (Package (0x00){})
+                }
+            }
+        }
+
+        Scope (\_PR.PR01)
+        {
+            Method (XDEP, 0, NotSerialized)
+            {
+                If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
+                {
+                    Return (Package (0x01)
+                    {
+                        \_SB.PEPD
+                    })
+                }
+                Else
+                {
+                    Return (Package (0x00){})
+                }
+            }
+        }
+
+        Scope (\_PR.PR02)
+        {
+            Method (XDEP, 0, NotSerialized)
+            {
+                If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
+                {
+                    Return (Package (0x01)
+                    {
+                        \_SB.PEPD
+                    })
+                }
+                Else
+                {
+                    Return (Package (0x00){})
+                }
+            }
+        }
+
+        Scope (\_PR.PR03)
+        {
+            Method (XDEP, 0, NotSerialized)
+            {
+                ADBG ("PR03 DEP Call")
+                If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
+                {
+                    Return (Package (0x01)
+                    {
+                        \_SB.PEPD
+                    })
+                }
+                Else
+                {
+                    Return (Package (0x00){})
+                }
+            }
+        }
+
+        Scope (\_PR.PR04)
+        {
+            Method (XDEP, 0, NotSerialized)
+            {
+                If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
+                {
+                    Return (Package (0x01)
+                    {
+                        \_SB.PEPD
+                    })
+                }
+                Else
+                {
+                    Return (Package (0x00){})
+                }
+            }
+        }
+
+        Scope (\_PR.PR05)
+        {
+            Method (XDEP, 0, NotSerialized)
+            {
+                If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
+                {
+                    Return (Package (0x01)
+                    {
+                        \_SB.PEPD
+                    })
+                }
+                Else
+                {
+                    Return (Package (0x00){})
+                }
+            }
+        }
+
+        Scope (\_PR.PR06)
+        {
+            Method (XDEP, 0, NotSerialized)
+            {
+                If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
+                {
+                    Return (Package (0x01)
+                    {
+                        \_SB.PEPD
+                    })
+                }
+                Else
+                {
+                    Return (Package (0x00){})
+                }
+            }
+        }
+
+        Scope (\_PR.PR07)
+        {
+            Method (XDEP, 0, NotSerialized)
+            {
+                If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
+                {
+                    Return (Package (0x01)
+                    {
+                        \_SB.PEPD
+                    })
+                }
+                Else
+                {
+                    Return (Package (0x00){})
+                }
+            }
+        }
+
+        Scope (\_PR.PR08)
+        {
+            Method (XDEP, 0, NotSerialized)
+            {
+                If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
+                {
+                    Return (Package (0x01)
+                    {
+                        \_SB.PEPD
+                    })
+                }
+                Else
+                {
+                    Return (Package (0x00){})
+                }
+            }
+        }
+
+        Scope (\_PR.PR09)
+        {
+            Method (XDEP, 0, NotSerialized)
+            {
+                If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
+                {
+                    Return (Package (0x01)
+                    {
+                        \_SB.PEPD
+                    })
+                }
+                Else
+                {
+                    Return (Package (0x00){})
+                }
+            }
+        }
+
+        Scope (\_PR.PR10)
+        {
+            Method (XDEP, 0, NotSerialized)
+            {
+                If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
+                {
+                    Return (Package (0x01)
+                    {
+                        \_SB.PEPD
+                    })
+                }
+                Else
+                {
+                    Return (Package (0x00){})
+                }
+            }
+        }
+
+        Scope (\_PR.PR11)
+        {
+            Method (XDEP, 0, NotSerialized)
+            {
+                If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
+                {
+                    Return (Package (0x01)
+                    {
+                        \_SB.PEPD
+                    })
+                }
+                Else
+                {
+                    Return (Package (0x00){})
+                }
+            }
+        }
+
+        Scope (\_PR.PR12)
+        {
+            Method (XDEP, 0, NotSerialized)
+            {
+                If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
+                {
+                    Return (Package (0x01)
+                    {
+                        \_SB.PEPD
+                    })
+                }
+                Else
+                {
+                    Return (Package (0x00){})
+                }
+            }
+        }
+
+        Scope (\_PR.PR13)
+        {
+            Method (XDEP, 0, NotSerialized)
+            {
+                If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
+                {
+                    Return (Package (0x01)
+                    {
+                        \_SB.PEPD
+                    })
+                }
+                Else
+                {
+                    Return (Package (0x00){})
+                }
+            }
+        }
+
+        Scope (\_PR.PR14)
+        {
+            Method (XDEP, 0, NotSerialized)
+            {
+                If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
+                {
+                    Return (Package (0x01)
+                    {
+                        \_SB.PEPD
+                    })
+                }
+                Else
+                {
+                    Return (Package (0x00){})
+                }
+            }
+        }
+
+        Scope (\_PR.PR15)
+        {
+            Method (XDEP, 0, NotSerialized)
+            {
+                If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
+                {
+                    Return (Package (0x01)
+                    {
+                        \_SB.PEPD
+                    })
+                }
+                Else
+                {
+                    Return (Package (0x00){})
+                }
+            }
+        }
+
+        Scope (\_SB)
+        {
+            Device (PEPD)
+            {
+                Name (_HID, "INT33A1" /* Intel Power Engine */)  // _HID: Hardware ID
+                Name (_CID, EisaId ("PNP0D80") /* Windows-compatible System Power Management Controller */)  // _CID: Compatible ID
+                Name (_UID, 0x01)  // _UID: Unique ID
+                Name (DEVY, Package (0x44)
+                {
+                    Package (0x03)
+                    {
+                        "\\_PR.PR00", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x00
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_PR.PR01", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x00
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_PR.PR02", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x00
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_PR.PR03", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x00
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_PR.PR04", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x00
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_PR.PR05", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x00
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_PR.PR06", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x00
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_PR.PR07", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x00
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.GFX0", 
+                        0x01, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x03
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.SAT0", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x03)
+                            {
+                                0xFF, 
+                                0x00, 
+                                0x81
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.UA00", 
+                        0x01, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x03
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.UA01", 
+                        0x01, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x03
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.I2C0", 
+                        0x01, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x03
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.I2C1", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x03
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.XHC", 
+                        0x01, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x03
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.HDAS", 
+                        0x01, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x03)
+                            {
+                                0xFF, 
+                                0x00, 
+                                0x81
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.PEMC", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x03
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.PSDC", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x03
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.I2C2", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x03
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.I2C3", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x03
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.I2C4", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x03
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.I2C5", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x03
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.UA02", 
+                        0x01, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x03
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.SPI0", 
+                        0x01, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x03
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.SPI1", 
+                        0x01, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x03
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.RP01.PXSX", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x03)
+                            {
+                                0xFF, 
+                                0x00, 
+                                0x81
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.RP02.PXSX", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x03)
+                            {
+                                0xFF, 
+                                0x00, 
+                                0x81
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.RP03.PXSX", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x03)
+                            {
+                                0xFF, 
+                                0x00, 
+                                0x81
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.RP04.PXSX", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x03)
+                            {
+                                0xFF, 
+                                0x00, 
+                                0x81
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.RP05.PXSX", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x03)
+                            {
+                                0xFF, 
+                                0x00, 
+                                0x81
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.RP06.PXSX", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x03)
+                            {
+                                0xFF, 
+                                0x00, 
+                                0x81
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.RP07.PXSX", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x03)
+                            {
+                                0xFF, 
+                                0x00, 
+                                0x81
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.RP08.PXSX", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x03)
+                            {
+                                0xFF, 
+                                0x00, 
+                                0x81
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.RP09.PXSX", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x03)
+                            {
+                                0xFF, 
+                                0x00, 
+                                0x81
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.RP10.PXSX", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x03)
+                            {
+                                0xFF, 
+                                0x00, 
+                                0x81
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.RP11.PXSX", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x03)
+                            {
+                                0xFF, 
+                                0x00, 
+                                0x81
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.RP12.PXSX", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x03)
+                            {
+                                0xFF, 
+                                0x00, 
+                                0x81
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.RP13.PXSX", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x03)
+                            {
+                                0xFF, 
+                                0x00, 
+                                0x81
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.RP14.PXSX", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x03)
+                            {
+                                0xFF, 
+                                0x00, 
+                                0x81
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.RP15.PXSX", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x03)
+                            {
+                                0xFF, 
+                                0x00, 
+                                0x81
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.RP16.PXSX", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x03)
+                            {
+                                0xFF, 
+                                0x00, 
+                                0x81
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.RP17.PXSX", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x03)
+                            {
+                                0xFF, 
+                                0x00, 
+                                0x81
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.RP18.PXSX", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x03)
+                            {
+                                0xFF, 
+                                0x00, 
+                                0x81
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.RP19.PXSX", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x03)
+                            {
+                                0xFF, 
+                                0x00, 
+                                0x81
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.RP20.PXSX", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x03)
+                            {
+                                0xFF, 
+                                0x00, 
+                                0x81
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.ISP0", 
+                        0x01, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x03
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.SAT0.PRT0", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x03
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.SAT0.PRT1", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x03
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.SAT0.PRT2", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x03
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.SAT0.PRT3", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x03
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.SAT0.PRT4", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x03
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.SAT0.PRT5", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x03
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.SAT0.NVM1", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x03
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.SAT0.NVM2", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x03
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.SAT0.NVM3", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x03
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.SAT0.VOL0", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x03)
+                            {
+                                0xFF, 
+                                0x00, 
+                                0x81
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_PR.PR08", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x00
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_PR.PR09", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x00
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_PR.PR10", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x00
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_PR.PR11", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x00
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_PR.PR12", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x00
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_PR.PR13", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x00
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_PR.PR14", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x00
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_PR.PR15", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x00
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.HECI", 
+                        0x01, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x03)
+                            {
+                                0xFF, 
+                                0x00, 
+                                0x81
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.RP09.PXSX.TBDU.XHC", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x03
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.GLAN", 
+                        0x01, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x03
+                            }
+                        }
+                    }, 
+
+                    Package (0x03)
+                    {
+                        "\\_SB.PCI0.RP09", 
+                        0x00, 
+                        Package (0x02)
+                        {
+                            0x00, 
+                            Package (0x02)
+                            {
+                                0xFF, 
+                                0x03
+                            }
+                        }
+                    }
                 })
+                Name (BCCD, Package (0x0B)
+                {
+                    Package (0x02)
+                    {
+                        "\\_SB.PCI0.SAT0", 
+                        Package (0x01)
+                        {
+                            Package (0x03)
+                            {
+                                Package (0x05)
+                                {
+                                    0x01, 
+                                    0x08, 
+                                    0x00, 
+                                    0x01, 
+                                    0xB2
+                                }, 
+
+                                Package (0x03)
+                                {
+                                    0x00, 
+                                    0xCD, 
+                                    0x01
+                                }, 
+
+                                0x3E80
+                            }
+                        }
+                    }, 
+
+                    Package (0x02)
+                    {
+                        "\\_SB.PCI0.SAT0.PRT0", 
+                        Package (0x01)
+                        {
+                            Package (0x03)
+                            {
+                                Package (0x05)
+                                {
+                                    0x01, 
+                                    0x08, 
+                                    0x00, 
+                                    0x01, 
+                                    0xB2
+                                }, 
+
+                                Package (0x03)
+                                {
+                                    0x00, 
+                                    0xCD, 
+                                    0x01
+                                }, 
+
+                                0x3E80
+                            }
+                        }
+                    }, 
+
+                    Package (0x02)
+                    {
+                        "\\_SB.PCI0.SAT0.PRT1", 
+                        Package (0x01)
+                        {
+                            Package (0x03)
+                            {
+                                Package (0x05)
+                                {
+                                    0x01, 
+                                    0x08, 
+                                    0x00, 
+                                    0x01, 
+                                    0xB2
+                                }, 
+
+                                Package (0x03)
+                                {
+                                    0x00, 
+                                    0xCD, 
+                                    0x01
+                                }, 
+
+                                0x3E80
+                            }
+                        }
+                    }, 
+
+                    Package (0x02)
+                    {
+                        "\\_SB.PCI0.SAT0.PRT2", 
+                        Package (0x01)
+                        {
+                            Package (0x03)
+                            {
+                                Package (0x05)
+                                {
+                                    0x01, 
+                                    0x08, 
+                                    0x00, 
+                                    0x01, 
+                                    0xB2
+                                }, 
+
+                                Package (0x03)
+                                {
+                                    0x00, 
+                                    0xCD, 
+                                    0x01
+                                }, 
+
+                                0x3E80
+                            }
+                        }
+                    }, 
+
+                    Package (0x02)
+                    {
+                        "\\_SB.PCI0.SAT0.PRT3", 
+                        Package (0x01)
+                        {
+                            Package (0x03)
+                            {
+                                Package (0x05)
+                                {
+                                    0x01, 
+                                    0x08, 
+                                    0x00, 
+                                    0x01, 
+                                    0xB2
+                                }, 
+
+                                Package (0x03)
+                                {
+                                    0x00, 
+                                    0xCD, 
+                                    0x01
+                                }, 
+
+                                0x3E80
+                            }
+                        }
+                    }, 
+
+                    Package (0x02)
+                    {
+                        "\\_SB.PCI0.SAT0.VOL0", 
+                        Package (0x01)
+                        {
+                            Package (0x03)
+                            {
+                                Package (0x05)
+                                {
+                                    0x01, 
+                                    0x08, 
+                                    0x00, 
+                                    0x01, 
+                                    0xB2
+                                }, 
+
+                                Package (0x03)
+                                {
+                                    0x00, 
+                                    0xCD, 
+                                    0x01
+                                }, 
+
+                                0x3E80
+                            }
+                        }
+                    }, 
+
+                    Package (0x02)
+                    {
+                        "\\_SB.PCI0.RP01.PXSX", 
+                        Package (0x01)
+                        {
+                            Package (0x03)
+                            {
+                                Package (0x05)
+                                {
+                                    0x01, 
+                                    0x08, 
+                                    0x00, 
+                                    0x01, 
+                                    0xB2
+                                }, 
+
+                                Package (0x03)
+                                {
+                                    0x00, 
+                                    0xCD, 
+                                    0x01
+                                }, 
+
+                                0x000186A0
+                            }
+                        }
+                    }, 
+
+                    Package (0x02)
+                    {
+                        "\\_SB.PCI0.RP02.PXSX", 
+                        Package (0x01)
+                        {
+                            Package (0x03)
+                            {
+                                Package (0x05)
+                                {
+                                    0x01, 
+                                    0x08, 
+                                    0x00, 
+                                    0x01, 
+                                    0xB2
+                                }, 
+
+                                Package (0x03)
+                                {
+                                    0x00, 
+                                    0xCD, 
+                                    0x01
+                                }, 
+
+                                0x000186A0
+                            }
+                        }
+                    }, 
+
+                    Package (0x02)
+                    {
+                        "\\_SB.PCI0.RP03.PXSX", 
+                        Package (0x01)
+                        {
+                            Package (0x03)
+                            {
+                                Package (0x05)
+                                {
+                                    0x01, 
+                                    0x08, 
+                                    0x00, 
+                                    0x01, 
+                                    0xB2
+                                }, 
+
+                                Package (0x03)
+                                {
+                                    0x00, 
+                                    0xCD, 
+                                    0x01
+                                }, 
+
+                                0x000186A0
+                            }
+                        }
+                    }, 
+
+                    Package (0x02)
+                    {
+                        "\\_SB.PCI0.RP05.PXSX", 
+                        Package (0x01)
+                        {
+                            Package (0x03)
+                            {
+                                Package (0x05)
+                                {
+                                    0x01, 
+                                    0x08, 
+                                    0x00, 
+                                    0x01, 
+                                    0xB2
+                                }, 
+
+                                Package (0x03)
+                                {
+                                    0x00, 
+                                    0xCD, 
+                                    0x01
+                                }, 
+
+                                0x000186A0
+                            }
+                        }
+                    }, 
+
+                    Package (0x02)
+                    {
+                        "\\_SB.PCI0.RP09.PXSX", 
+                        Package (0x01)
+                        {
+                            Package (0x03)
+                            {
+                                Package (0x05)
+                                {
+                                    0x01, 
+                                    0x08, 
+                                    0x00, 
+                                    0x01, 
+                                    0xB2
+                                }, 
+
+                                Package (0x03)
+                                {
+                                    0x00, 
+                                    0xCD, 
+                                    0x01
+                                }, 
+
+                                0x000186A0
+                            }
+                        }
+                    }
+                })
+                Method (_STA, 0, NotSerialized)  // _STA: Status
+                {
+                    If (((OSYS >= 0x07DF) || ((OSYS >= 0x07DC) && (
+                        S0ID == 0x01))))
+                    {
+                        Return (0x0F)
+                    }
+
+                    Return (0x00)
+                }
+
+                Method (_DSM, 4, Serialized)  // _DSM: Device-Specific Method
+                {
+                    If ((Arg0 == ToUUID ("c4eb40a0-6cd2-11e2-bcfd-0800200c9a66")))
+                    {
+                        If ((Arg2 == Zero))
+                        {
+                            Return (Buffer (One)
+                            {
+                                 0x7F                                             // .
+                            })
+                        }
+
+                        If ((Arg2 == One))
+                        {
+                            If ((S0ID == 0x00))
+                            {
+                                Return (Package (0x00){})
+                            }
+
+                            If (((PEPC & 0x00100000) != 0x00))
+                            {
+                                If ((\_SB.PCI0.RP01.PXSX.PAHC () || \_SB.PCI0.RP01.PXSX.PNVM ()))
+                                {
+                                    DerefOf (DEVY [0x19]) [0x01] = 0x01
+                                }
+
+                                If ((\_SB.PCI0.RP02.PXSX.PAHC () || \_SB.PCI0.RP02.PXSX.PNVM ()))
+                                {
+                                    DerefOf (DEVY [0x1A]) [0x01] = 0x01
+                                }
+
+                                If ((\_SB.PCI0.RP03.PXSX.PAHC () || \_SB.PCI0.RP03.PXSX.PNVM ()))
+                                {
+                                    DerefOf (DEVY [0x1B]) [0x01] = 0x01
+                                }
+
+                                If ((\_SB.PCI0.RP04.PXSX.PAHC () || \_SB.PCI0.RP04.PXSX.PNVM ()))
+                                {
+                                    DerefOf (DEVY [0x1C]) [0x01] = 0x01
+                                }
+
+                                If ((\_SB.PCI0.RP05.PXSX.PAHC () || \_SB.PCI0.RP05.PXSX.PNVM ()))
+                                {
+                                    DerefOf (DEVY [0x1D]) [0x01] = 0x01
+                                }
+
+                                If ((\_SB.PCI0.RP06.PXSX.PAHC () || \_SB.PCI0.RP06.PXSX.PNVM ()))
+                                {
+                                    DerefOf (DEVY [0x1E]) [0x01] = 0x01
+                                }
+
+                                If ((\_SB.PCI0.RP07.PXSX.PAHC () || \_SB.PCI0.RP07.PXSX.PNVM ()))
+                                {
+                                    DerefOf (DEVY [0x1F]) [0x01] = 0x01
+                                }
+
+                                If ((\_SB.PCI0.RP08.PXSX.PAHC () || \_SB.PCI0.RP08.PXSX.PNVM ()))
+                                {
+                                    DerefOf (DEVY [0x20]) [0x01] = 0x01
+                                }
+
+                                If ((\_SB.PCI0.RP09.PXSX.PAHC () || \_SB.PCI0.RP09.PXSX.PNVM ()))
+                                {
+                                    DerefOf (DEVY [0x21]) [0x01] = 0x01
+                                }
+
+                                If ((\_SB.PCI0.RP10.PXSX.PAHC () || \_SB.PCI0.RP10.PXSX.PNVM ()))
+                                {
+                                    DerefOf (DEVY [0x22]) [0x01] = 0x01
+                                }
+
+                                If ((\_SB.PCI0.RP11.PXSX.PAHC () || \_SB.PCI0.RP11.PXSX.PNVM ()))
+                                {
+                                    DerefOf (DEVY [0x23]) [0x01] = 0x01
+                                }
+
+                                If ((\_SB.PCI0.RP12.PXSX.PAHC () || \_SB.PCI0.RP12.PXSX.PNVM ()))
+                                {
+                                    DerefOf (DEVY [0x24]) [0x01] = 0x01
+                                }
+
+                                If ((\_SB.PCI0.RP13.PXSX.PAHC () || \_SB.PCI0.RP13.PXSX.PNVM ()))
+                                {
+                                    DerefOf (DEVY [0x25]) [0x01] = 0x01
+                                }
+
+                                If ((\_SB.PCI0.RP14.PXSX.PAHC () || \_SB.PCI0.RP14.PXSX.PNVM ()))
+                                {
+                                    DerefOf (DEVY [0x26]) [0x01] = 0x01
+                                }
+
+                                If ((\_SB.PCI0.RP15.PXSX.PAHC () || \_SB.PCI0.RP15.PXSX.PNVM ()))
+                                {
+                                    DerefOf (DEVY [0x27]) [0x01] = 0x01
+                                }
+
+                                If ((\_SB.PCI0.RP16.PXSX.PAHC () || \_SB.PCI0.RP16.PXSX.PNVM ()))
+                                {
+                                    DerefOf (DEVY [0x28]) [0x01] = 0x01
+                                }
+
+                                If ((\_SB.PCI0.RP17.PXSX.PAHC () || \_SB.PCI0.RP17.PXSX.PNVM ()))
+                                {
+                                    DerefOf (DEVY [0x29]) [0x01] = 0x01
+                                }
+
+                                If ((\_SB.PCI0.RP18.PXSX.PAHC () || \_SB.PCI0.RP18.PXSX.PNVM ()))
+                                {
+                                    DerefOf (DEVY [0x2A]) [0x01] = 0x01
+                                }
+
+                                If ((\_SB.PCI0.RP19.PXSX.PAHC () || \_SB.PCI0.RP19.PXSX.PNVM ()))
+                                {
+                                    DerefOf (DEVY [0x2B]) [0x01] = 0x01
+                                }
+
+                                If ((\_SB.PCI0.RP20.PXSX.PAHC () || \_SB.PCI0.RP20.PXSX.PNVM ()))
+                                {
+                                    DerefOf (DEVY [0x2C]) [0x01] = 0x01
+                                }
+                            }
+
+                            If (((PEPC & 0x00200000) != 0x00))
+                            {
+                                DerefOf (DEVY [0x37]) [0x01] = 0x01
+                            }
+
+                            If (((PEPC & 0x00400000) != 0x00))
+                            {
+                                DerefOf (DEVY [0x2E]) [0x01] = 0x01
+                            }
+
+                            If (((PEPC & 0x00800000) != 0x00))
+                            {
+                                DerefOf (DEVY [0x2F]) [0x01] = 0x01
+                            }
+
+                            If (((PEPC & 0x01000000) != 0x00))
+                            {
+                                DerefOf (DEVY [0x30]) [0x01] = 0x01
+                            }
+
+                            If (((PEPC & 0x02000000) != 0x00))
+                            {
+                                DerefOf (DEVY [0x31]) [0x01] = 0x01
+                            }
+
+                            If (((PEPC & 0x04000000) != 0x00))
+                            {
+                                DerefOf (DEVY [0x32]) [0x01] = 0x01
+                            }
+
+                            If (((PEPC & 0x08000000) != 0x00))
+                            {
+                                DerefOf (DEVY [0x33]) [0x01] = 0x01
+                            }
+
+                            If (((PEPC & 0x10000000) != 0x00))
+                            {
+                                DerefOf (DEVY [0x34]) [0x01] = 0x01
+                            }
+
+                            If (((PEPC & 0x20000000) != 0x00))
+                            {
+                                DerefOf (DEVY [0x35]) [0x01] = 0x01
+                            }
+
+                            If (((PEPC & 0x40000000) != 0x00))
+                            {
+                                DerefOf (DEVY [0x36]) [0x01] = 0x01
+                            }
+
+                            If (((PEPC & 0x04) == 0x00))
+                            {
+                                DerefOf (DEVY [0x0A]) [0x01] = 0x00
+                            }
+
+                            If (((PEPC & 0x08) == 0x00))
+                            {
+                                DerefOf (DEVY [0x0B]) [0x01] = 0x00
+                            }
+
+                            If (((PEPC & 0x10) == 0x00)){}
+                            If (((PEPC & 0x20) == 0x00))
+                            {
+                                DerefOf (DEVY [0x0C]) [0x01] = 0x00
+                            }
+
+                            If (((PEPC & 0x40) == 0x00))
+                            {
+                                DerefOf (DEVY [0x0D]) [0x01] = 0x00
+                            }
+
+                            If (((PEPC & 0x80) == 0x00))
+                            {
+                                DerefOf (DEVY [0x0E]) [0x01] = 0x00
+                            }
+
+                            If (((PEPC & 0x0100) == 0x00))
+                            {
+                                DerefOf (DEVY [0x0F]) [0x01] = 0x00
+                            }
+
+                            If (((PEPC & 0x0200) == 0x00))
+                            {
+                                DerefOf (DEVY [0x08]) [0x01] = 0x00
+                            }
+
+                            If ((TCNT >= 0x01))
+                            {
+                                DerefOf (DEVY [0x00]) [0x01] = 0x01
+                            }
+
+                            If ((TCNT >= 0x02))
+                            {
+                                DerefOf (DEVY [0x01]) [0x01] = 0x01
+                            }
+
+                            If ((TCNT >= 0x03))
+                            {
+                                DerefOf (DEVY [0x02]) [0x01] = 0x01
+                            }
+
+                            If ((TCNT >= 0x04))
+                            {
+                                DerefOf (DEVY [0x03]) [0x01] = 0x01
+                            }
+
+                            If ((TCNT >= 0x05))
+                            {
+                                DerefOf (DEVY [0x04]) [0x01] = 0x01
+                            }
+
+                            If ((TCNT >= 0x06))
+                            {
+                                DerefOf (DEVY [0x05]) [0x01] = 0x01
+                            }
+
+                            If ((TCNT >= 0x07))
+                            {
+                                DerefOf (DEVY [0x06]) [0x01] = 0x01
+                            }
+
+                            If ((TCNT >= 0x08))
+                            {
+                                DerefOf (DEVY [0x07]) [0x01] = 0x01
+                            }
+
+                            If ((TCNT >= 0x09))
+                            {
+                                DerefOf (DEVY [0x38]) [0x01] = 0x01
+                            }
+
+                            If ((TCNT >= 0x0A))
+                            {
+                                DerefOf (DEVY [0x39]) [0x01] = 0x01
+                            }
+
+                            If ((TCNT >= 0x0B))
+                            {
+                                DerefOf (DEVY [0x3A]) [0x01] = 0x01
+                            }
+
+                            If ((TCNT >= 0x0C))
+                            {
+                                DerefOf (DEVY [0x3B]) [0x01] = 0x01
+                            }
+
+                            If ((TCNT >= 0x0D))
+                            {
+                                DerefOf (DEVY [0x3C]) [0x01] = 0x01
+                            }
+
+                            If ((TCNT >= 0x0E))
+                            {
+                                DerefOf (DEVY [0x3D]) [0x01] = 0x01
+                            }
+
+                            If ((TCNT >= 0x0F))
+                            {
+                                DerefOf (DEVY [0x3E]) [0x01] = 0x01
+                            }
+
+                            If ((TCNT >= 0x10))
+                            {
+                                DerefOf (DEVY [0x3F]) [0x01] = 0x01
+                            }
+
+                            If (((PEPC & 0x0400) == 0x00))
+                            {
+                                DerefOf (DEVY [0x00]) [0x01] = 0x00
+                                DerefOf (DEVY [0x01]) [0x01] = 0x00
+                                DerefOf (DEVY [0x02]) [0x01] = 0x00
+                                DerefOf (DEVY [0x03]) [0x01] = 0x00
+                                DerefOf (DEVY [0x04]) [0x01] = 0x00
+                                DerefOf (DEVY [0x05]) [0x01] = 0x00
+                                DerefOf (DEVY [0x06]) [0x01] = 0x00
+                                DerefOf (DEVY [0x07]) [0x01] = 0x00
+                                DerefOf (DEVY [0x38]) [0x01] = 0x00
+                                DerefOf (DEVY [0x39]) [0x01] = 0x00
+                                DerefOf (DEVY [0x3A]) [0x01] = 0x00
+                                DerefOf (DEVY [0x3B]) [0x01] = 0x00
+                                DerefOf (DEVY [0x3C]) [0x01] = 0x00
+                                DerefOf (DEVY [0x3D]) [0x01] = 0x00
+                                DerefOf (DEVY [0x3E]) [0x01] = 0x00
+                                DerefOf (DEVY [0x3F]) [0x01] = 0x00
+                            }
+
+                            If (((PEPC & 0x0800) == 0x00))
+                            {
+                                DerefOf (DEVY [0x10]) [0x01] = 0x00
+                            }
+
+                            If (((PEPC & 0x1000) == 0x00))
+                            {
+                                DerefOf (DEVY [0x11]) [0x01] = 0x00
+                            }
+
+                            If (((PEPC & 0x2000) == 0x00))
+                            {
+                                DerefOf (DEVY [0x12]) [0x01] = 0x00
+                            }
+
+                            If (((PEPC & 0x4000) == 0x00))
+                            {
+                                DerefOf (DEVY [0x13]) [0x01] = 0x00
+                            }
+
+                            If (((PEPC & 0x8000) == 0x00))
+                            {
+                                DerefOf (DEVY [0x14]) [0x01] = 0x00
+                            }
+
+                            If (((PEPC & 0x00010000) == 0x00))
+                            {
+                                DerefOf (DEVY [0x15]) [0x01] = 0x00
+                            }
+
+                            If (((PEPC & 0x00020000) == 0x00))
+                            {
+                                DerefOf (DEVY [0x16]) [0x01] = 0x00
+                            }
+
+                            If (((PEPC & 0x00040000) == 0x00))
+                            {
+                                DerefOf (DEVY [0x17]) [0x01] = 0x00
+                            }
+
+                            If (((PEPC & 0x00080000) == 0x00))
+                            {
+                                DerefOf (DEVY [0x18]) [0x01] = 0x00
+                            }
+
+                            If (((PEPC & 0x02) == 0x00))
+                            {
+                                DerefOf (DEVY [0x2D]) [0x01] = 0x00
+                            }
+
+                            If ((OSYS >= 0x07DF))
+                            {
+                                If (CondRefOf (\_SB.PCI0.RP01.PXSX.WIST))
+                                {
+                                    If (\_SB.PCI0.RP01.PXSX.WIST ())
+                                    {
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x19]) [0x02]
+                                            ) [0x01]) [0x01] = 0x03
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x19]) [0x02]
+                                            ) [0x01]) [0x02] = 0x00
+                                        DerefOf (DEVY [0x19]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP02.PXSX.WIST))
+                                {
+                                    If (\_SB.PCI0.RP02.PXSX.WIST ())
+                                    {
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x1A]) [0x02]
+                                            ) [0x01]) [0x01] = 0x03
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x1A]) [0x02]
+                                            ) [0x01]) [0x02] = 0x00
+                                        DerefOf (DEVY [0x1A]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP03.PXSX.WIST))
+                                {
+                                    If (\_SB.PCI0.RP03.PXSX.WIST ())
+                                    {
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x1B]) [0x02]
+                                            ) [0x01]) [0x01] = 0x03
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x1B]) [0x02]
+                                            ) [0x01]) [0x02] = 0x00
+                                        DerefOf (DEVY [0x1B]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP04.PXSX.WIST))
+                                {
+                                    If (\_SB.PCI0.RP04.PXSX.WIST ())
+                                    {
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x1C]) [0x02]
+                                            ) [0x01]) [0x01] = 0x03
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x1C]) [0x02]
+                                            ) [0x01]) [0x02] = 0x00
+                                        DerefOf (DEVY [0x1C]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP05.PXSX.WIST))
+                                {
+                                    If (\_SB.PCI0.RP05.PXSX.WIST ())
+                                    {
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x1D]) [0x02]
+                                            ) [0x01]) [0x01] = 0x03
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x1D]) [0x02]
+                                            ) [0x01]) [0x02] = 0x00
+                                        DerefOf (DEVY [0x1D]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP06.PXSX.WIST))
+                                {
+                                    If (\_SB.PCI0.RP06.PXSX.WIST ())
+                                    {
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x1E]) [0x02]
+                                            ) [0x01]) [0x01] = 0x03
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x1E]) [0x02]
+                                            ) [0x01]) [0x02] = 0x00
+                                        DerefOf (DEVY [0x1E]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP07.PXSX.WIST))
+                                {
+                                    If (\_SB.PCI0.RP07.PXSX.WIST ())
+                                    {
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x1F]) [0x02]
+                                            ) [0x01]) [0x01] = 0x03
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x1F]) [0x02]
+                                            ) [0x01]) [0x02] = 0x00
+                                        DerefOf (DEVY [0x1F]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP08.PXSX.WIST))
+                                {
+                                    If (\_SB.PCI0.RP08.PXSX.WIST ())
+                                    {
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x20]) [0x02]
+                                            ) [0x01]) [0x01] = 0x03
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x20]) [0x02]
+                                            ) [0x01]) [0x02] = 0x00
+                                        DerefOf (DEVY [0x20]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP09.PXSX.WIST))
+                                {
+                                    If (\_SB.PCI0.RP09.PXSX.WIST ())
+                                    {
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x21]) [0x02]
+                                            ) [0x01]) [0x01] = 0x03
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x21]) [0x02]
+                                            ) [0x01]) [0x02] = 0x00
+                                        DerefOf (DEVY [0x21]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP10.PXSX.WIST))
+                                {
+                                    If (\_SB.PCI0.RP10.PXSX.WIST ())
+                                    {
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x22]) [0x02]
+                                            ) [0x01]) [0x01] = 0x03
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x22]) [0x02]
+                                            ) [0x01]) [0x02] = 0x00
+                                        DerefOf (DEVY [0x22]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP11.PXSX.WIST))
+                                {
+                                    If (\_SB.PCI0.RP11.PXSX.WIST ())
+                                    {
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x23]) [0x02]
+                                            ) [0x01]) [0x01] = 0x03
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x23]) [0x02]
+                                            ) [0x01]) [0x02] = 0x00
+                                        DerefOf (DEVY [0x23]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP12.PXSX.WIST))
+                                {
+                                    If (\_SB.PCI0.RP12.PXSX.WIST ())
+                                    {
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x24]) [0x02]
+                                            ) [0x01]) [0x01] = 0x03
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x24]) [0x02]
+                                            ) [0x01]) [0x02] = 0x00
+                                        DerefOf (DEVY [0x24]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP13.PXSX.WIST))
+                                {
+                                    If (\_SB.PCI0.RP13.PXSX.WIST ())
+                                    {
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x25]) [0x02]
+                                            ) [0x01]) [0x01] = 0x03
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x25]) [0x02]
+                                            ) [0x01]) [0x02] = 0x00
+                                        DerefOf (DEVY [0x25]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP14.PXSX.WIST))
+                                {
+                                    If (\_SB.PCI0.RP14.PXSX.WIST ())
+                                    {
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x26]) [0x02]
+                                            ) [0x01]) [0x01] = 0x03
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x26]) [0x02]
+                                            ) [0x01]) [0x02] = 0x00
+                                        DerefOf (DEVY [0x26]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP15.PXSX.WIST))
+                                {
+                                    If (\_SB.PCI0.RP15.PXSX.WIST ())
+                                    {
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x27]) [0x02]
+                                            ) [0x01]) [0x01] = 0x03
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x27]) [0x02]
+                                            ) [0x01]) [0x02] = 0x00
+                                        DerefOf (DEVY [0x27]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP16.PXSX.WIST))
+                                {
+                                    If (\_SB.PCI0.RP16.PXSX.WIST ())
+                                    {
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x28]) [0x02]
+                                            ) [0x01]) [0x01] = 0x03
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x28]) [0x02]
+                                            ) [0x01]) [0x02] = 0x00
+                                        DerefOf (DEVY [0x28]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP17.PXSX.WIST))
+                                {
+                                    If (\_SB.PCI0.RP17.PXSX.WIST ())
+                                    {
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x29]) [0x02]
+                                            ) [0x01]) [0x01] = 0x03
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x29]) [0x02]
+                                            ) [0x01]) [0x02] = 0x00
+                                        DerefOf (DEVY [0x29]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP18.PXSX.WIST))
+                                {
+                                    If (\_SB.PCI0.RP18.PXSX.WIST ())
+                                    {
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x2A]) [0x02]
+                                            ) [0x01]) [0x01] = 0x03
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x2A]) [0x02]
+                                            ) [0x01]) [0x02] = 0x00
+                                        DerefOf (DEVY [0x2A]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP19.PXSX.WIST))
+                                {
+                                    If (\_SB.PCI0.RP19.PXSX.WIST ())
+                                    {
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x2B]) [0x02]
+                                            ) [0x01]) [0x01] = 0x03
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x2B]) [0x02]
+                                            ) [0x01]) [0x02] = 0x00
+                                        DerefOf (DEVY [0x2B]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP20.PXSX.WIST))
+                                {
+                                    If (\_SB.PCI0.RP20.PXSX.WIST ())
+                                    {
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x2C]) [0x02]
+                                            ) [0x01]) [0x01] = 0x03
+                                        DerefOf (DerefOf (DerefOf (DEVY [0x2C]) [0x02]
+                                            ) [0x01]) [0x02] = 0x00
+                                        DerefOf (DEVY [0x2C]) [0x01] = 0x01
+                                    }
+                                }
+                            }
+
+                            If (((OSYS >= 0x07DF) && (PWIG == 0x01)))
+                            {
+                                If (CondRefOf (\_SB.PCI0.RP01.PXSX.WGST))
+                                {
+                                    If (\_SB.PCI0.RP01.PXSX.WGST ())
+                                    {
+                                        DerefOf (DEVY [0x19]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP02.PXSX.WGST))
+                                {
+                                    If (\_SB.PCI0.RP02.PXSX.WGST ())
+                                    {
+                                        DerefOf (DEVY [0x1A]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP03.PXSX.WGST))
+                                {
+                                    If (\_SB.PCI0.RP03.PXSX.WGST ())
+                                    {
+                                        DerefOf (DEVY [0x1B]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP04.PXSX.WGST))
+                                {
+                                    If (\_SB.PCI0.RP04.PXSX.WGST ())
+                                    {
+                                        DerefOf (DEVY [0x1C]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP05.PXSX.WGST))
+                                {
+                                    If (\_SB.PCI0.RP05.PXSX.WGST ())
+                                    {
+                                        DerefOf (DEVY [0x1D]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP06.PXSX.WGST))
+                                {
+                                    If (\_SB.PCI0.RP06.PXSX.WGST ())
+                                    {
+                                        DerefOf (DEVY [0x1E]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP07.PXSX.WGST))
+                                {
+                                    If (\_SB.PCI0.RP07.PXSX.WGST ())
+                                    {
+                                        DerefOf (DEVY [0x1F]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP08.PXSX.WGST))
+                                {
+                                    If (\_SB.PCI0.RP08.PXSX.WGST ())
+                                    {
+                                        DerefOf (DEVY [0x20]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP09.PXSX.WGST))
+                                {
+                                    If (\_SB.PCI0.RP09.PXSX.WGST ())
+                                    {
+                                        DerefOf (DEVY [0x21]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP10.PXSX.WGST))
+                                {
+                                    If (\_SB.PCI0.RP10.PXSX.WGST ())
+                                    {
+                                        DerefOf (DEVY [0x22]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP11.PXSX.WGST))
+                                {
+                                    If (\_SB.PCI0.RP11.PXSX.WGST ())
+                                    {
+                                        DerefOf (DEVY [0x23]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP12.PXSX.WGST))
+                                {
+                                    If (\_SB.PCI0.RP12.PXSX.WGST ())
+                                    {
+                                        DerefOf (DEVY [0x24]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP13.PXSX.WGST))
+                                {
+                                    If (\_SB.PCI0.RP13.PXSX.WGST ())
+                                    {
+                                        DerefOf (DEVY [0x25]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP14.PXSX.WGST))
+                                {
+                                    If (\_SB.PCI0.RP14.PXSX.WGST ())
+                                    {
+                                        DerefOf (DEVY [0x26]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP15.PXSX.WGST))
+                                {
+                                    If (\_SB.PCI0.RP15.PXSX.WGST ())
+                                    {
+                                        DerefOf (DEVY [0x27]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP16.PXSX.WGST))
+                                {
+                                    If (\_SB.PCI0.RP16.PXSX.WGST ())
+                                    {
+                                        DerefOf (DEVY [0x28]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP17.PXSX.WGST))
+                                {
+                                    If (\_SB.PCI0.RP17.PXSX.WGST ())
+                                    {
+                                        DerefOf (DEVY [0x29]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP18.PXSX.WGST))
+                                {
+                                    If (\_SB.PCI0.RP18.PXSX.WGST ())
+                                    {
+                                        DerefOf (DEVY [0x2A]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP19.PXSX.WGST))
+                                {
+                                    If (\_SB.PCI0.RP19.PXSX.WGST ())
+                                    {
+                                        DerefOf (DEVY [0x2B]) [0x01] = 0x01
+                                    }
+                                }
+
+                                If (CondRefOf (\_SB.PCI0.RP20.PXSX.WGST))
+                                {
+                                    If (\_SB.PCI0.RP20.PXSX.WGST ())
+                                    {
+                                        DerefOf (DEVY [0x2C]) [0x01] = 0x01
+                                    }
+                                }
+                            }
+
+                            If (((\RTBT == 0x01) && (\TBTS == 0x01)))
+                            {
+                                DerefOf (DEVY [0x43]) [0x01] = 0x01
+                            }
+
+                            If ((\_SB.PCI0.GLAN.GLST () == 0x00))
+                            {
+                                DerefOf (DEVY [0x42]) [0x01] = 0x00
+                            }
+
+                            Return (DEVY) /* \_SB_.PEPD.DEVY */
+                        }
+
+                        If ((Arg2 == 0x02))
+                        {
+                            Return (BCCD) /* \_SB_.PEPD.BCCD */
+                        }
+
+                        If ((Arg2 == 0x03))
+                        {
+                            If ((S0ID == 0x01))
+                            {
+                                \_SB.PCI0.LPCB.EC.ECNT (0x01)
+                            }
+                        }
+
+                        If ((Arg2 == 0x04))
+                        {
+                            If ((S0ID == 0x01))
+                            {
+                                If (((\RTBT == 0x01) && CondRefOf (\_GPE.TBNF)))
+                                {
+                                    \_GPE.TBNF ()
+                                }
+
+                                \_SB.PCI0.LPCB.EC.ECNT (0x00)
+                            }
+                        }
+
+                        If ((Arg2 == 0x05))
+                        {
+                            If ((S0ID == 0x01))
+                            {
+                                \GUAM (0x01)
+                            }
+
+                            \_SB.PCI0.LPCB.EC.ECNT (0x03)
+                        }
+
+                        If ((Arg2 == 0x06))
+                        {
+                            \_SB.PCI0.LPCB.EC.ECNT (0x02)
+                            If ((S0ID == 0x01))
+                            {
+                                \GUAM (0x00)
+                            }
+                        }
+                    }
+
+                    Return (Buffer (0x01)
+                    {
+                         0x00                                             // .
+                    })
+                }
             }
         }
     }
@@ -27771,9 +27800,9 @@ DefinitionBlock ("", "DSDT", 2, "LENOVO", "SKL     ", 0x00000001)
     })
     Name (\_S3, Package (0x04)  // _S3_: S3 System State
     {
-        0x05,
-        0x05,
-        0x00,
+        0x05, 
+        0x05, 
+        0x00, 
         0x00
     })
     Name (\_S4, Package (0x04)  // _S4_: S4 System State
@@ -28951,7 +28980,7 @@ DefinitionBlock ("", "DSDT", 2, "LENOVO", "SKL     ", 0x00000001)
                 "Access Denied", 
                 "System Busy"
             })
-            Name (ITEM, Package (0x6C)
+            Name (ITEM, Package (0x6E)
             {
                 Package (0x02)
                 {
@@ -29508,7 +29537,7 @@ DefinitionBlock ("", "DSDT", 2, "LENOVO", "SKL     ", 0x00000001)
                 Package (0x02)
                 {
                     0x00, 
-                    "Reserved"
+                    "InternalStorageTamper"
                 }, 
 
                 Package (0x02)
@@ -29556,7 +29585,7 @@ DefinitionBlock ("", "DSDT", 2, "LENOVO", "SKL     ", 0x00000001)
                 Package (0x02)
                 {
                     0x00, 
-                    "WakeByThunderbolt"
+                    "Reserved"
                 }, 
 
                 Package (0x02)
@@ -29585,8 +29614,20 @@ DefinitionBlock ("", "DSDT", 2, "LENOVO", "SKL     ", 0x00000001)
 
                 Package (0x02)
                 {
+                    0x18, 
+                    "I8254ClockGating"
+                }, 
+
+                Package (0x02)
+                {
                     0x19, 
                     "ThunderboltBIOSAssistMode"
+                }, 
+
+                Package (0x02)
+                {
+                    0x1D, 
+                    "ModernStandby"
                 }, 
 
                 Package (0x02)
@@ -29601,7 +29642,7 @@ DefinitionBlock ("", "DSDT", 2, "LENOVO", "SKL     ", 0x00000001)
                     "PasswordChangeTime"
                 }
             })
-            Name (VSEL, Package (0x1D)
+            Name (VSEL, Package (0x1E)
             {
                 Package (0x02)
                 {
@@ -29808,6 +29849,12 @@ DefinitionBlock ("", "DSDT", 2, "LENOVO", "SKL     ", 0x00000001)
                 {
                     "Immediately", 
                     "AfterReboot"
+                }, 
+
+                Package (0x02)
+                {
+                    "Enable", 
+                    "Disable"
                 }
             })
             Name (VLST, Package (0x11)
@@ -32604,7 +32651,7 @@ DefinitionBlock ("", "DSDT", 2, "LENOVO", "SKL     ", 0x00000001)
 
         Method (_Q7F, 0, NotSerialized)  // _Qxx: EC Query, xx=0x00-0xFF
         {
-            Fatal (0x01, 0x80010000, 0x00011C1F)
+            Fatal (0x01, 0x80010000, 0x00011C5D)
         }
 
         Method (_Q46, 0, NotSerialized)  // _Qxx: EC Query, xx=0x00-0xFF

@@ -5,13 +5,13 @@
  * 
  * Disassembling to symbolic ASL+ operators
  *
- * Disassembly of dsdt.aml, Sun May 26 18:13:18 2019
+ * Disassembly of dsdt.aml, Sun May 26 18:19:22 2019
  *
  * Original Table Header:
  *     Signature        "DSDT"
  *     Length           0x00026DB4 (159156)
  *     Revision         0x02
- *     Checksum         0xEB
+ *     Checksum         0x5A
  *     OEM ID           "LENOVO"
  *     OEM Table ID     "SKL     "
  *     OEM Revision     0x00000000 (0)
@@ -261,7 +261,7 @@ DefinitionBlock ("", "DSDT", 2, "LENOVO", "SKL     ", 0x00000000)
 
     Name (SS1, 0x00)
     Name (SS2, 0x00)
-    Name (SS3, Zero)
+    Name (SS3, One)
     One
     Name (SS4, One)
     One
@@ -25186,7 +25186,7 @@ DefinitionBlock ("", "DSDT", 2, "LENOVO", "SKL     ", 0x00000000)
 
         Scope (\_PR.PR00)
         {
-            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            Method (XDEP, 0, NotSerialized)
             {
                 If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
                 {
@@ -25204,7 +25204,7 @@ DefinitionBlock ("", "DSDT", 2, "LENOVO", "SKL     ", 0x00000000)
 
         Scope (\_PR.PR01)
         {
-            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            Method (XDEP, 0, NotSerialized)
             {
                 If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
                 {
@@ -25222,7 +25222,7 @@ DefinitionBlock ("", "DSDT", 2, "LENOVO", "SKL     ", 0x00000000)
 
         Scope (\_PR.PR02)
         {
-            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            Method (XDEP, 0, NotSerialized)
             {
                 If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
                 {
@@ -25240,7 +25240,7 @@ DefinitionBlock ("", "DSDT", 2, "LENOVO", "SKL     ", 0x00000000)
 
         Scope (\_PR.PR03)
         {
-            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            Method (XDEP, 0, NotSerialized)
             {
                 ADBG ("PR03 DEP Call")
                 If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
@@ -25259,7 +25259,7 @@ DefinitionBlock ("", "DSDT", 2, "LENOVO", "SKL     ", 0x00000000)
 
         Scope (\_PR.PR04)
         {
-            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            Method (XDEP, 0, NotSerialized)
             {
                 If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
                 {
@@ -25277,7 +25277,7 @@ DefinitionBlock ("", "DSDT", 2, "LENOVO", "SKL     ", 0x00000000)
 
         Scope (\_PR.PR05)
         {
-            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            Method (XDEP, 0, NotSerialized)
             {
                 If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
                 {
@@ -25295,7 +25295,7 @@ DefinitionBlock ("", "DSDT", 2, "LENOVO", "SKL     ", 0x00000000)
 
         Scope (\_PR.PR06)
         {
-            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            Method (XDEP, 0, NotSerialized)
             {
                 If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
                 {
@@ -25313,7 +25313,7 @@ DefinitionBlock ("", "DSDT", 2, "LENOVO", "SKL     ", 0x00000000)
 
         Scope (\_PR.PR07)
         {
-            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            Method (XDEP, 0, NotSerialized)
             {
                 If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
                 {
@@ -25331,7 +25331,7 @@ DefinitionBlock ("", "DSDT", 2, "LENOVO", "SKL     ", 0x00000000)
 
         Scope (\_PR.PR08)
         {
-            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            Method (XDEP, 0, NotSerialized)
             {
                 If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
                 {
@@ -25349,7 +25349,7 @@ DefinitionBlock ("", "DSDT", 2, "LENOVO", "SKL     ", 0x00000000)
 
         Scope (\_PR.PR09)
         {
-            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            Method (XDEP, 0, NotSerialized)
             {
                 If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
                 {
@@ -25367,7 +25367,7 @@ DefinitionBlock ("", "DSDT", 2, "LENOVO", "SKL     ", 0x00000000)
 
         Scope (\_PR.PR10)
         {
-            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            Method (XDEP, 0, NotSerialized)
             {
                 If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
                 {
@@ -25385,7 +25385,7 @@ DefinitionBlock ("", "DSDT", 2, "LENOVO", "SKL     ", 0x00000000)
 
         Scope (\_PR.PR11)
         {
-            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            Method (XDEP, 0, NotSerialized)
             {
                 If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
                 {
@@ -25403,7 +25403,7 @@ DefinitionBlock ("", "DSDT", 2, "LENOVO", "SKL     ", 0x00000000)
 
         Scope (\_PR.PR12)
         {
-            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            Method (XDEP, 0, NotSerialized)
             {
                 If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
                 {
@@ -25421,7 +25421,7 @@ DefinitionBlock ("", "DSDT", 2, "LENOVO", "SKL     ", 0x00000000)
 
         Scope (\_PR.PR13)
         {
-            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            Method (XDEP, 0, NotSerialized)
             {
                 If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
                 {
@@ -25439,7 +25439,7 @@ DefinitionBlock ("", "DSDT", 2, "LENOVO", "SKL     ", 0x00000000)
 
         Scope (\_PR.PR14)
         {
-            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            Method (XDEP, 0, NotSerialized)
             {
                 If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
                 {
@@ -25457,7 +25457,7 @@ DefinitionBlock ("", "DSDT", 2, "LENOVO", "SKL     ", 0x00000000)
 
         Scope (\_PR.PR15)
         {
-            Method (_DEP, 0, NotSerialized)  // _DEP: Dependencies
+            Method (XDEP, 0, NotSerialized)
             {
                 If (((S0ID == 0x01) || (OSYS >= 0x07DF)))
                 {
